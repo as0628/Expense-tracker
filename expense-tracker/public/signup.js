@@ -7,22 +7,21 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
 
   const payload = { name, email, password };
 
-  // Log what's being submitted
   console.log("Form submission payload:", payload);
 
-  // Example POST to backend (commented out until backend is ready)
-  /*
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch('http://localhost:3000/api/auth/signup', {   // ✅ Correct endpoint
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+
     const data = await res.json();
     if (res.ok) {
       console.log('Success response:', data);
-      localStorage.setItem('token', data.token);
-      window.location.href = 'dashboard.html';
+      alert('Signup successful!');
+      // You could redirect here if needed
+      // window.location.href = 'login.html';
     } else {
       console.error('Server error:', data);
       alert(data.error || 'Something went wrong');
@@ -31,5 +30,4 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
     console.error('Network error:', err);
     alert('Network error');
   }
-  */
 });
