@@ -1,6 +1,10 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { SECRET_KEY } = require('../secret');
 
+
+// Signup
 const signup = async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -36,6 +40,7 @@ const signup = async (req, res) => {
   });
 };
 
+// Login
 const login = (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -57,7 +62,19 @@ const login = (req, res) => {
       return res.status(400).json({ error: 'Not matched' });
     }
 
-    res.json({ message: 'User logged in successfully' });
+    // Generate JWT token
+   // Generate JWT token with user id
+// After verifying user from DB:
+const token = jwt.sign(
+  { id: user.id, email: user.email },  // ✅ include id also
+  SECRET_KEY,
+  { expiresIn: '1h' }
+);
+
+
+
+res.json({ message: 'User logged in successfully', token, userId: user.id });
+
   });
 };
 
