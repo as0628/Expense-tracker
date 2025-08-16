@@ -1,7 +1,9 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { SECRET_KEY } = require('../secret');
+require("dotenv").config();
+
+const { SECRET_KEY } = process.env;
 
 
 // Signup
