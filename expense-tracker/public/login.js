@@ -12,13 +12,16 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     });
     
     const data = await res.json();
+    console.log("Login response:", data); // 👈 debug
 
     if (res.ok) {
-      localStorage.setItem('token', data.token);
+      // ✅ store token properly (check your backend response key!)
+      localStorage.setItem('token', data.token || data.jwt || data.accessToken);
+
       alert('Login successful!');
-      window.location.href = 'expense.html'; // Redirect
+      window.location.href = 'expense.html'; // Redirect to expenses page
     } else {
-      alert(data.error);
+      alert(data.error || "Login failed");
     }
   } catch (err) {
     console.error('Login error:', err);

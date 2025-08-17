@@ -10,29 +10,43 @@ if (!token) {
 }
 
 // =========================
-// Premium Purchase
+// Premium Purchase (updated)
 // =========================
 document.getElementById("buy-premium-btn").addEventListener("click", async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/premium/order", {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must log in first!");
+      window.location.href = "login.html";
+      return;
+    }
+
+    const res = await fetch("http://localhost:3000/api/order/order", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-      },
+      }
     });
 
     const data = await res.json();
+    console.log("Order response:", data);
 
-    if (res.ok && data.paymentLink) {
-      // ✅ redirect to Cashfree payment link
-      window.location.href = data.paymentLink;
-    } else {
+    if (!res.ok || !data.success) {
       alert(data.error || "Failed to create order.");
+      return;
     }
+
+    // 👉 Redirect to Cashfree page with session
+    const qs = new URLSearchParams({
+      orderId: data.orderId,
+      sessionId: data.payment_session_id
+    }).toString();
+
+    window.location.href = `cashfree.html?${qs}`;
   } catch (err) {
     console.error("Error creating order:", err);
-    alert("Something went wrong!");
+    alert("Something went wrong while creating order");
   }
 });
 
@@ -68,8 +82,6 @@ async function loadExpenses() {
 }
 
 // =========================
-// Add Expense
-// =========================
 document.getElementById("expense-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -99,8 +111,6 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
   }
 });
 
-// =========================
-// Delete Expense
 // =========================
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
