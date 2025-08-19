@@ -8,5 +8,6 @@ router.post("/order", auth, orderController.createPaymentOrder);
 
 // Verify / Update Order Status (also requires login)
 router.post("/status", auth, orderController.verifyPayment);
+router.get("/payment-status/:orderId", orderController.getPaymentStatusById);
 
 module.exports = router;

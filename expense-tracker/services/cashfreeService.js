@@ -1,49 +1,74 @@
 // services/cashfreeService.js
-import { Cashfree, CFEnvironment } from "cashfree-pg";
+const axios = require("axios");
 
-const cashfree = new Cashfree(
-  CFEnvironment.SANDBOX,                // Switch to PRODUCTION later
-  process.env.CASHFREE_APP_ID,
-  process.env.CASHFREE_SECRET_KEY
-);
-
+// ==============================
 // Function to create order
-export const createOrder = async (orderId, orderAmount, customerID, customerPhone) => {
+// ==============================
+const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
   try {
-    const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
-    const formattedExpiryDate = expiryDate.toISOString();
-
-    const request = {
-      order_amount: orderAmount,
-      order_currency: "INR",
-      order_id: orderId,
-      customer_details: {
-        customer_id: customerID.toString(),
-        customer_phone: customerPhone,
-        // customer_email: "test@example.com" // optional
+    const response = await axios.post(
+      "https://sandbox.cashfree.com/pg/orders",
+      {
+        order_id: orderId,
+        order_amount: orderAmount,
+        order_currency: "INR",
+        customer_details: {
+          customer_id: String(userId),   // 👈 force it to string
+          customer_phone: String(customerPhone),
+          customer_email: "test@gmail.com",
+        },
+        order_meta: {
+          return_url: `http://127.0.0.1:5500/expense-tracker/public/payment-status.html?order_id=${orderId}`,
+        },
       },
-      order_meta: {
-        return_url: `http://localhost:3000/payment-status/${orderId}`, 
-        payment_methods: "cc,dc,upi"
-      },
-      order_expiry_time: formattedExpiryDate
-    };
+      {
+        headers: {
+          accept: "application/json",
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-api-version": "2022-09-01",
+          "content-type": "application/json",
+        },
+      }
+    );
 
-    const response = await cashfree.PGCreateOrder(request);
-    return response.data; // contains payment_session_id
+    return response.data;
   } catch (error) {
     console.error("Error creating order:", error.response?.data || error.message);
     throw error;
   }
 };
 
+
+// ==============================
 // Function to check payment status
-export const getPaymentStatus = async (orderId) => {
+// ==============================
+const getPaymentStatus = async (orderId) => {
   try {
-    const response = await cashfree.PGOrderFetchPayments(orderId);
-    return response.data;
+    const response = await axios.get(
+      `https://sandbox.cashfree.com/pg/orders/${orderId}/payments`,
+      {
+        headers: {
+          accept: "application/json",
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-api-version": "2022-09-01",
+        },
+      }
+    );
+
+    return response.data; // ✅ array of payments
   } catch (error) {
-    console.error("Error fetching payment status:", error.response?.data || error.message);
+    console.error(
+      "Error fetching payment status:",
+      error.response?.data || error.message
+    );
     throw error;
   }
+};
+
+// Export functions in CommonJS
+module.exports = {
+  createOrder,
+  getPaymentStatus,
 };

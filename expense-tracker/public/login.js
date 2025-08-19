@@ -15,11 +15,19 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     console.log("Login response:", data); // 👈 debug
 
     if (res.ok) {
-      // ✅ store token properly (check your backend response key!)
-      localStorage.setItem('token', data.token || data.jwt || data.accessToken);
+      // ✅ Save token + premium flag in localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userId', data.userId);
+      localStorage.setItem('isPremium', data.isPremium);
 
       alert('Login successful!');
-      window.location.href = 'expense.html'; // Redirect to expenses page
+
+      // ✅ Redirect based on premium status
+      if (data.isPremium === 1 || data.isPremium === true) {
+        window.location.href = 'premiumexpense.html';
+      } else {
+        window.location.href = 'expense.html';
+      }
     } else {
       alert(data.error || "Login failed");
     }
