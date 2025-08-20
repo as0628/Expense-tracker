@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 // ==========================
-// Get all premium expenses
+// Get all expenses (for premium user)
 // ==========================
 const getPremiumExpenses = (req, res) => {
   const userId = req.user.id;
@@ -19,7 +19,7 @@ const getPremiumExpenses = (req, res) => {
 };
 
 // ==========================
-// Add new premium expense
+// Add new expense & update total_expense
 // ==========================
 const addPremiumExpense = (req, res) => {
   const { amount, description, category } = req.body;
@@ -37,69 +37,117 @@ const addPremiumExpense = (req, res) => {
         console.error("Error inserting expense:", err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.status(201).json({ message: 'Premium expense added', expenseId: result.insertId });
+
+      // update signup.total_expense
+      db.query(
+        'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
+        [amount, userId],
+        (err2) => {
+          if (err2) {
+            console.error("Error updating total_expense:", err2);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          res.status(201).json({ message: 'Premium expense added', expenseId: result.insertId });
+        }
+      );
     }
   );
 };
 
 // ==========================
-// Update premium expense
+// Update expense & adjust total_expense
 // ==========================
 const updatePremiumExpense = (req, res) => {
   const { id } = req.params;
   const { amount, description, category } = req.body;
   const userId = req.user.id;
 
+  // first get old amount
   db.query(
-    'UPDATE expenses SET amount = ?, description = ?, category = ? WHERE id = ? AND user_id = ?',
-    [amount, description, category, id, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Error updating expense:", err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Premium expense not found' });
-      }
-      res.json({ message: 'Premium expense updated' });
+    'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
+    [id, userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
+
+      const oldAmount = rows[0].amount;
+
+      // update expense
+      db.query(
+        'UPDATE expenses SET amount = ?, description = ?, category = ? WHERE id = ? AND user_id = ?',
+        [amount, description, category, id, userId],
+        (err2, result) => {
+          if (err2) return res.status(500).json({ error: 'Database error' });
+
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Expense not found' });
+          }
+
+          // adjust total_expense
+          const diff = amount - oldAmount;
+          db.query(
+            'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
+            [diff, userId],
+            (err3) => {
+              if (err3) return res.status(500).json({ error: 'Database error' });
+              res.json({ message: 'Expense updated' });
+            }
+          );
+        }
+      );
     }
   );
 };
 
 // ==========================
-// Delete premium expense
+// Delete expense & reduce total_expense
 // ==========================
 const deletePremiumExpense = (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
+  // first get amount of the expense
   db.query(
-    'DELETE FROM expenses WHERE id = ? AND user_id = ?',
+    'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Error deleting expense:", err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Premium expense not found' });
-      }
-      res.json({ message: 'Premium expense deleted' });
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
+
+      const expenseAmount = rows[0].amount;
+
+      // delete expense
+      db.query(
+        'DELETE FROM expenses WHERE id = ? AND user_id = ?',
+        [id, userId],
+        (err2, result) => {
+          if (err2) return res.status(500).json({ error: 'Database error' });
+          if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });
+
+          // reduce total_expense
+          db.query(
+            'UPDATE signup SET total_expense = total_expense - ? WHERE id = ?',
+            [expenseAmount, userId],
+            (err3) => {
+              if (err3) return res.status(500).json({ error: 'Database error' });
+              res.json({ message: 'Expense deleted' });
+            }
+          );
+        }
+      );
     }
   );
 };
 
 // ==========================
-// Leaderboard (sum expenses per user)
+// Leaderboard (directly from signup)
 // ==========================
 const getLeaderboard = (req, res) => {
   const query = `
-    SELECT s.id, s.name, s.email, SUM(e.amount) AS total_spent
-    FROM signup s
-    JOIN expenses e ON s.id = e.user_id
-    WHERE s.isPremium = 1
-    GROUP BY s.id, s.name, s.email
-    ORDER BY total_spent DESC
+    SELECT id, name, email, total_expense
+    FROM signup
+    WHERE isPremium = 1
+    ORDER BY total_expense DESC
     LIMIT 10;
   `;
 
@@ -111,7 +159,6 @@ const getLeaderboard = (req, res) => {
     res.json(results);
   });
 };
-
 
 module.exports = { 
   getPremiumExpenses, 

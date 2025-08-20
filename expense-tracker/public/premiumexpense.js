@@ -139,7 +139,8 @@ async function loadLeaderboard() {
       row.innerHTML = `
         <td>${index + 1}</td>
         <td>${user.name} (${user.email})</td>
-        <td>${user.total_spent || 0}</td>
+        <td>${user.total_expense || 0}</td>
+
       `;
       leaderboardBody.appendChild(row);
     });
