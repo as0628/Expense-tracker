@@ -59,6 +59,34 @@
     </div>
   </div>
 
+  <!-- Report Section -->
+<div id="report-section" style="display: none; margin-top: 20px;">
+  <h2>Expense Reports</h2>
+
+  <!-- Filter Buttons -->
+  <div>
+    <button onclick="loadReport('daily')">Daily</button>
+    <button onclick="loadReport('weekly')">Weekly</button>
+    <button onclick="loadReport('monthly')">Monthly</button>
+  </div>
+
+  <!-- Report Table -->
+  <table border="1" id="report-table" style="margin-top: 10px; width: 100%;">
+    <thead>
+      <tr>
+        <th>Date/Period</th>
+        <th>Total Income</th>
+        <th>Total Expense</th>
+      </tr>
+    </thead>
+    <tbody id="report-body"></tbody>
+  </table>
+
+  <!-- Download Button -->
+  <button id="download-btn" style="margin-top: 10px;">⬇ Download Report</button>
+</div>
+
+
   <script src="premiumexpense.js"></script>
 </body>
 </html>

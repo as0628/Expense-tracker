@@ -160,6 +160,76 @@ document.getElementById("show-leaderboard-btn")
   .addEventListener("click", loadLeaderboard);
 
 
+//////
+// premiumexpense.js
+
+document.addEventListener("DOMContentLoaded", () => {
+  const reportSection = document.getElementById("report-section");
+  const downloadBtn = document.getElementById("download-btn");
+  const reportBody = document.getElementById("report-body");
+
+  // ✅ Always show report section for premium users
+  reportSection.style.display = "block";
+
+  // ✅ Disable download button until data is loaded
+  downloadBtn.disabled = true;
+
+  // Function to fetch report data
+  async function loadReport(period) {
+    try {
+      // Simulated fetch request – replace with your backend API endpoint
+      const res = await fetch(`/api/premiumexpenses/report?period=${period}`, {
+        headers: { Authorization: localStorage.getItem("token") }
+      });
+      const data = await res.json();
+
+      // Clear old rows
+      reportBody.innerHTML = "";
+
+      // Fill table with report data
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.period}</td>
+          <td>${row.total_income}</td>
+          <td>${row.total_expense}</td>
+        `;
+        reportBody.appendChild(tr);
+      });
+
+      // ✅ Enable download button after data is loaded
+      downloadBtn.disabled = false;
+
+    } catch (err) {
+      console.error("Error loading report:", err);
+      alert("Failed to load report.");
+    }
+  }
+
+  // Attach loadReport function to global scope so HTML buttons can call it
+  window.loadReport = loadReport;
+
+  // Handle download click
+  downloadBtn.addEventListener("click", () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Period,Total Income,Total Expense\n";
+
+    Array.from(reportBody.querySelectorAll("tr")).forEach(tr => {
+      const cols = Array.from(tr.querySelectorAll("td")).map(td => td.innerText);
+      csvContent += cols.join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "expense_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+});
+
+
 
 // =========================
 // Initial Load

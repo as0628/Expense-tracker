@@ -49,39 +49,54 @@ const signup = async (req, res) => {
 // ==========================
 const login = (req, res) => {
   const { email, password } = req.body;
+  console.log("📥 Login request:", email, password);
+
   if (!email || !password) {
     return res.status(400).json({ error: 'All fields required' });
   }
 
   db.query('SELECT * FROM signup WHERE email = ?', [email], async (err, results) => {
     if (err) {
-      console.error(err);
+      console.error("❌ DB error:", err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (results.length === 0) {
+      console.warn("⚠️ No user found for:", email);
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
     const user = results[0];
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(400).json({ error: 'Invalid email or password' });
+    console.log("✅ Found user:", user);
+
+    try {
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) {
+        console.warn("⚠️ Invalid password for:", email);
+        return res.status(400).json({ error: 'Invalid email or password' });
+      }
+
+      console.log("🔑 Generating token with SECRET_KEY:", SECRET_KEY ? "exists" : "MISSING!");
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, isPremium: user.isPremium },
+        SECRET_KEY,
+        { expiresIn: '1h' }
+      );
+
+      console.log("✅ Token generated");
+
+      res.json({
+        message: 'User logged in successfully',
+        token,
+        userId: user.id,
+        isPremium: !!user.isPremium
+      });
+    } catch (e) {
+      console.error("❌ Login error:", e);
+      res.status(500).json({ error: 'Login failed' });
     }
-
-    // ✅ Include isPremium in token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, isPremium: user.isPremium },
-      SECRET_KEY,
-      { expiresIn: '1h' }
-    );
-
-    res.json({
-      message: 'User logged in successfully',
-      token,
-      userId: user.id,
-      isPremium: !!user.isPremium   // send premium flag to frontend
-    });
   });
 };
+
 
 module.exports = { signup, login };

@@ -6,7 +6,10 @@ const db = require('../config/db');
 const getPremiumExpenses = (req, res) => {
   const userId = req.user.id;
   db.query(
-    'SELECT * FROM expenses WHERE user_id = ?',
+    `SELECT id, amount, description, category, created_at AS createdAt 
+     FROM expenses 
+     WHERE user_id = ? 
+     ORDER BY created_at DESC`,
     [userId],
     (err, results) => {
       if (err) {
@@ -17,6 +20,7 @@ const getPremiumExpenses = (req, res) => {
     }
   );
 };
+
 
 // ==========================
 // Add new expense & update total_expense
