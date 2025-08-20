@@ -4,7 +4,7 @@ const db = mysql.createConnection({
   user: 'root',
   password: 'Root@0697',
   database: 'expense_tracker'
-});
+}).promise(); // <- add .promise() here
 
 db.connect(err => {
   if (err) {
