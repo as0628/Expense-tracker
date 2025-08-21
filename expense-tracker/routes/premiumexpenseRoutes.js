@@ -5,7 +5,7 @@ const {
   addPremiumExpense, 
   updatePremiumExpense, 
   deletePremiumExpense,
-  getLeaderboard
+  getLeaderboard,getReport
 } = require('../controllers/premiumexpenseController');
 const auth = require('../middleware/auth'); // middleware to verify token
 
@@ -14,6 +14,8 @@ router.get('/', auth, getPremiumExpenses);
 router.post('/', auth, addPremiumExpense);
 router.put('/:id', auth, updatePremiumExpense);
 router.delete('/:id', auth, deletePremiumExpense);
+router.get('/report', auth, getReport);
+
 
 // Leaderboard route
 router.get('/leaderboard', auth, getLeaderboard);

@@ -40,6 +40,7 @@ async function loadExpenses() {
         <td>${exp.amount}</td>
         <td>${exp.description}</td>
         <td>${exp.category}</td>
+        <td>${exp.type}</td>   <!-- ✅ Show income/expense -->
         <td>
           <button onclick="deleteExpense(${exp.id})">Delete</button>
         </td>
@@ -60,6 +61,7 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
   const amount = document.getElementById("amount").value.trim();
   const description = document.getElementById("description").value.trim();
   const category = document.getElementById("category").value;
+  const type = document.getElementById("type").value; // ✅ New field
 
   try {
     const res = await fetch("http://localhost:3000/api/premiumexpenses", {
@@ -68,7 +70,7 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ amount, description, category }),
+      body: JSON.stringify({ amount, description, category, type }), // ✅ Send type
     });
 
     const data = await res.json();
@@ -113,9 +115,7 @@ async function deleteExpense(id) {
 }
 
 // =========================
-// Load Leaderboard (✅ Fixed URL + handling)
-// =========================
-// Load Leaderboard (✅ Fixed for your HTML)
+// Load Leaderboard
 // =========================
 async function loadLeaderboard() {
   try {
@@ -140,7 +140,6 @@ async function loadLeaderboard() {
         <td>${index + 1}</td>
         <td>${user.name} (${user.email})</td>
         <td>${user.total_expense || 0}</td>
-
       `;
       leaderboardBody.appendChild(row);
     });
@@ -159,10 +158,9 @@ async function loadLeaderboard() {
 document.getElementById("show-leaderboard-btn")
   .addEventListener("click", loadLeaderboard);
 
-
-//////
-// premiumexpense.js
-
+// =========================
+// Reports
+// =========================
 document.addEventListener("DOMContentLoaded", () => {
   const reportSection = document.getElementById("report-section");
   const downloadBtn = document.getElementById("download-btn");
@@ -177,9 +175,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to fetch report data
   async function loadReport(period) {
     try {
-      // Simulated fetch request – replace with your backend API endpoint
-      const res = await fetch(`/api/premiumexpenses/report?period=${period}`, {
-        headers: { Authorization: localStorage.getItem("token") }
+      const res = await fetch(`http://localhost:3000/api/premiumexpenses/report?period=${period}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
 
@@ -228,8 +225,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.removeChild(link);
   });
 });
-
-
 
 // =========================
 // Initial Load

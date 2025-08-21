@@ -1,6 +1,8 @@
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
+const path = require("path");  // <-- add this
+
 const db = require("../config/db"); // MySQL connection (no .promise)
 
 // ==========================
@@ -60,17 +62,11 @@ const resetPasswordForm = (req, res) => {
         return res.status(400).send("Invalid or expired reset link.");
       }
 
-      res.send(`
-        <h2>Reset Password</h2>
-        <form action="/password/resetpassword/${id}" method="POST">
-          <input type="password" name="password" placeholder="Enter new password" required />
-          <button type="submit">Reset Password</button>
-        </form>
-      `);
+      // ✅ Better: Serve frontend page instead of inline HTML
+      res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
     }
   );
 };
-
 // ==========================
 // Handle reset password submission
 // ==========================
@@ -78,83 +74,63 @@ const resetPasswordSubmit = (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
 
+  if (!password || password.length < 6) {
+    return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+  }
+
   db.query(
     "SELECT * FROM ForgotPasswordRequests WHERE id = ? AND isActive = TRUE",
     [id],
     async (err, requests) => {
       if (err) {
         console.error("DB error:", err);
-        return res.status(500).send("Something went wrong.");
+        return res.status(500).json({ success: false, message: "Something went wrong." });
       }
       if (requests.length === 0) {
-        return res.status(400).send("Invalid or expired reset link.");
+        return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      try {
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Update user's password
-      db.query(
-        "UPDATE signup SET password = ? WHERE id = ?",
-        [hashedPassword, requests[0].userId],
-        (err2) => {
-          if (err2) {
-            console.error("Update error:", err2);
-            return res.status(500).send("Failed to update password.");
-          }
-
-          // Deactivate reset request
-          db.query(
-            "UPDATE ForgotPasswordRequests SET isActive = FALSE WHERE id = ?",
-            [id],
-            (err3) => {
-              if (err3) {
-                console.error("Deactivate error:", err3);
-                return res.status(500).send("Something went wrong.");
-              }
-
-     res.setHeader("Content-Type", "text/html");
-res.send(`
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Password Reset</title>
-  </head>
-  <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-    <h2 style="color: green;">Password reset successfully!</h2>
-    <p>You can now login with your new password.</p>
-    <a href="http://127.0.0.1:5500/expense-tracker/public/login.html">
-      <button style="
-        background-color: #4CAF50; 
-        color: white; 
-        padding: 10px 20px; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer;
-        font-size: 16px;
-        margin-top: 20px;
-      ">
-        Go to Login
-      </button>
-    </a>
-
-    <script>
-      setTimeout(() => {
-        window.location.href = "http://127.0.0.1:5500/expense-tracker/public/login.html";
-      }, 3000);
-    </script>
-  </body>
-  </html>
-`);
-
-
+        // Update user's password
+        db.query(
+          "UPDATE signup SET password = ? WHERE id = ?",
+          [hashedPassword, requests[0].userId],
+          (err2) => {
+            if (err2) {
+              console.error("Update error:", err2);
+              return res.status(500).json({ success: false, message: "Failed to update password." });
             }
-          );
-        }
-      );
+
+            // Deactivate reset request
+            db.query(
+              "UPDATE ForgotPasswordRequests SET isActive = FALSE WHERE id = ?",
+              [id],
+              (err3) => {
+                if (err3) {
+                  console.error("Deactivate error:", err3);
+                  return res.status(500).json({ success: false, message: "Something went wrong." });
+                }
+
+                // ✅ Respond with JSON (frontend will handle UI)
+                return res.json({
+                  success: true,
+                  message: "Password reset successfully! You can now login with your new password.",
+                  redirect: "/login.html" // optional, frontend can auto-redirect
+                });
+              }
+            );
+          }
+        );
+      } catch (hashErr) {
+        console.error("Hashing error:", hashErr);
+        return res.status(500).json({ success: false, message: "Failed to process password." });
+      }
     }
   );
 };
+
 
 module.exports = {
   forgotPassword,

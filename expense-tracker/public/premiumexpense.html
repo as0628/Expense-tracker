@@ -20,6 +20,8 @@
     <form id="expense-form">
       <input type="number" id="amount" placeholder="Amount spent" required><br>
       <input type="text" id="description" placeholder="Description" required><br>
+
+      <!-- Category -->
       <select id="category" required>
         <option value="">Select Category</option>
         <option value="Food">Food</option>
@@ -27,6 +29,14 @@
         <option value="Salary">Salary</option>
         <option value="Others">Others</option>
       </select><br>
+
+      <!-- ✅ New Type Field -->
+      <select id="type" required>
+        <option value="">Select Type</option>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select><br>
+
       <button type="submit">Add Expense</button>
     </form>
 
@@ -37,6 +47,7 @@
           <th>Amount</th>
           <th>Description</th>
           <th>Category</th>
+          <th>Type</th> <!-- ✅ Added -->
           <th>Action</th>
         </tr>
       </thead>
@@ -60,32 +71,31 @@
   </div>
 
   <!-- Report Section -->
-<div id="report-section" style="display: none; margin-top: 20px;">
-  <h2>Expense Reports</h2>
+  <div id="report-section" style="display: none; margin-top: 20px;">
+    <h2>Expense Reports</h2>
 
-  <!-- Filter Buttons -->
-  <div>
-    <button onclick="loadReport('daily')">Daily</button>
-    <button onclick="loadReport('weekly')">Weekly</button>
-    <button onclick="loadReport('monthly')">Monthly</button>
+    <!-- Filter Buttons -->
+    <div>
+      <button onclick="loadReport('daily')">Daily</button>
+      <button onclick="loadReport('weekly')">Weekly</button>
+      <button onclick="loadReport('monthly')">Monthly</button>
+    </div>
+
+    <!-- Report Table -->
+    <table border="1" id="report-table" style="margin-top: 10px; width: 100%;">
+      <thead>
+        <tr>
+          <th>Date/Period</th>
+          <th>Total Income</th>
+          <th>Total Expense</th>
+        </tr>
+      </thead>
+      <tbody id="report-body"></tbody>
+    </table>
+
+    <!-- Download Button -->
+    <button id="download-btn" style="margin-top: 10px;">⬇ Download Report</button>
   </div>
-
-  <!-- Report Table -->
-  <table border="1" id="report-table" style="margin-top: 10px; width: 100%;">
-    <thead>
-      <tr>
-        <th>Date/Period</th>
-        <th>Total Income</th>
-        <th>Total Expense</th>
-      </tr>
-    </thead>
-    <tbody id="report-body"></tbody>
-  </table>
-
-  <!-- Download Button -->
-  <button id="download-btn" style="margin-top: 10px;">⬇ Download Report</button>
-</div>
-
 
   <script src="premiumexpense.js"></script>
 </body>

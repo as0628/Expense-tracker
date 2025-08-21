@@ -6,7 +6,8 @@ const db = require('../config/db');
 const getPremiumExpenses = (req, res) => {
   const userId = req.user.id;
   db.query(
-    `SELECT id, amount, description, category, created_at AS createdAt 
+    `SELECT id, amount, description, category, type, created_at AS createdAt
+
      FROM expenses 
      WHERE user_id = ? 
      ORDER BY created_at DESC`,
@@ -21,39 +22,51 @@ const getPremiumExpenses = (req, res) => {
   );
 };
 
-
+// ==========================
+// Add new expense & update total_expense
+// ==========================
 // ==========================
 // Add new expense & update total_expense
 // ==========================
 const addPremiumExpense = (req, res) => {
-  const { amount, description, category } = req.body;
+  const { amount, description, category, type } = req.body; // ✅ include type
   const userId = req.user.id;
 
-  if (!amount || !description || !category) {
+  if (!amount || !description || !category || !type) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
+  // ✅ validate type
+  if (type !== "income" && type !== "expense") {
+    return res.status(400).json({ error: "Invalid type (must be income or expense)" });
+  }
+
   db.query(
-    'INSERT INTO expenses (amount, description, category, user_id) VALUES (?, ?, ?, ?)',
-    [amount, description, category, userId],
+    'INSERT INTO expenses (amount, description, category, type, user_id) VALUES (?, ?, ?, ?, ?)',
+    [amount, description, category, type, userId],
     (err, result) => {
       if (err) {
         console.error("Error inserting expense:", err);
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // update signup.total_expense
-      db.query(
-        'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
-        [amount, userId],
-        (err2) => {
-          if (err2) {
-            console.error("Error updating total_expense:", err2);
-            return res.status(500).json({ error: 'Database error' });
+      // ✅ only update signup.total_expense if it's an expense
+      if (type === "expense") {
+        db.query(
+          'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
+          [amount, userId],
+          (err2) => {
+            if (err2) {
+              console.error("Error updating total_expense:", err2);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            res.status(201).json({ message: 'Expense added', expenseId: result.insertId });
           }
-          res.status(201).json({ message: 'Premium expense added', expenseId: result.insertId });
-        }
-      );
+        );
+      } else {
+        // if income, just return success
+        res.status(201).json({ message: 'Income added', expenseId: result.insertId });
+      }
     }
   );
 };
@@ -63,10 +76,9 @@ const addPremiumExpense = (req, res) => {
 // ==========================
 const updatePremiumExpense = (req, res) => {
   const { id } = req.params;
-  const { amount, description, category } = req.body;
+  const { amount, description, category, type } = req.body;
   const userId = req.user.id;
 
-  // first get old amount
   db.query(
     'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
@@ -76,10 +88,9 @@ const updatePremiumExpense = (req, res) => {
 
       const oldAmount = rows[0].amount;
 
-      // update expense
       db.query(
-        'UPDATE expenses SET amount = ?, description = ?, category = ? WHERE id = ? AND user_id = ?',
-        [amount, description, category, id, userId],
+        'UPDATE expenses SET amount = ?, description = ?, category = ?, type = ? WHERE id = ? AND user_id = ?',
+[amount, description, category, type, id, userId],
         (err2, result) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
 
@@ -87,7 +98,6 @@ const updatePremiumExpense = (req, res) => {
             return res.status(404).json({ error: 'Expense not found' });
           }
 
-          // adjust total_expense
           const diff = amount - oldAmount;
           db.query(
             'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
@@ -110,7 +120,6 @@ const deletePremiumExpense = (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  // first get amount of the expense
   db.query(
     'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
@@ -120,7 +129,6 @@ const deletePremiumExpense = (req, res) => {
 
       const expenseAmount = rows[0].amount;
 
-      // delete expense
       db.query(
         'DELETE FROM expenses WHERE id = ? AND user_id = ?',
         [id, userId],
@@ -128,7 +136,6 @@ const deletePremiumExpense = (req, res) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
           if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });
 
-          // reduce total_expense
           db.query(
             'UPDATE signup SET total_expense = total_expense - ? WHERE id = ?',
             [expenseAmount, userId],
@@ -144,7 +151,7 @@ const deletePremiumExpense = (req, res) => {
 };
 
 // ==========================
-// Leaderboard (directly from signup)
+// Leaderboard
 // ==========================
 const getLeaderboard = (req, res) => {
   const query = `
@@ -164,10 +171,75 @@ const getLeaderboard = (req, res) => {
   });
 };
 
+// ==========================
+// Reports (Daily, Weekly, Monthly)
+// ==========================
+
+const getReport = async (req, res) => {
+  try {
+    const { period } = req.query;
+    const userId = req.user.id;
+
+    let query = "";
+
+    if (period === "daily") {
+      query = `
+        SELECT 
+          'Today' AS period,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS total_expense
+        FROM expenses
+        WHERE user_id = ? AND DATE(created_at) = CURDATE();
+      `;
+    } else if (period === "weekly") {
+      query = `
+        SELECT 
+          'This Week' AS period,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS total_expense
+        FROM expenses
+        WHERE user_id = ? AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1);
+      `;
+    } else if (period === "monthly") {
+      query = `
+        SELECT 
+          'This Month' AS period,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS total_expense
+        FROM expenses
+        WHERE user_id = ? AND MONTH(created_at) = MONTH(CURDATE()) 
+          AND YEAR(created_at) = YEAR(CURDATE());
+      `;
+    } else {
+      return res.status(400).json({ error: "Invalid period" });
+    }
+
+    db.query(query, [userId], (err, rows) => {
+      if (err) {
+        console.error("Report query error:", err);
+        return res.status(500).json({ error: "Failed to generate report" });
+      }
+
+      const result = rows.length > 0
+        ? rows
+        : [{ period, total_income: 0, total_expense: 0 }];
+
+      res.json(result);
+    });
+  } catch (err) {
+    console.error("Report query error:", err);
+    res.status(500).json({ error: "Failed to generate report" });
+  }
+};
+
+
+
+
 module.exports = { 
   getPremiumExpenses, 
   addPremiumExpense, 
   updatePremiumExpense, 
   deletePremiumExpense,
-  getLeaderboard
+  getLeaderboard,
+  getReport
 };
