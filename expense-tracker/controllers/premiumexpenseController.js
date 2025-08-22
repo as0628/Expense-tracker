@@ -1,5 +1,8 @@
 const db = require('../config/db');
 
+const ExcelJS = require("exceljs");
+const fs = require("fs");
+const path = require("path");
 // ==========================
 // Get all expenses (for premium user)
 // ==========================
@@ -155,7 +158,7 @@ const deletePremiumExpense = (req, res) => {
 // ==========================
 const getLeaderboard = (req, res) => {
   const query = `
-    SELECT id, name, email, total_expense
+    SELECT id, name, total_expense
     FROM signup
     WHERE isPremium = 1
     ORDER BY total_expense DESC
@@ -234,6 +237,183 @@ const getReport = async (req, res) => {
 
 
 
+// Download Expense Report
+
+
+
+
+const downloadReport = async (req, res) => {
+  try {
+    const { period } = req.query;
+    const userId = req.user.id;
+
+    console.log("📥 Generating Excel Report for user:", userId, "period:", period);
+
+    // === Detailed Transactions ===
+    let rows;
+    try {
+      [rows] = await db.promise().query(
+        `SELECT 
+           id, amount, description, category, type, created_at AS date
+         FROM expenses
+         WHERE user_id = ?
+         ORDER BY created_at ASC`,
+        [userId]
+      );
+      console.log("✅ Detailed transactions fetched:", rows.length);
+    } catch (err) {
+      console.error("❌ Error fetching detailed transactions:", err);
+      return res.status(500).json({ error: "DB error - details" });
+    }
+
+    // === Monthly (Yearly Summary) ===
+    let yearly;
+    try {
+      [yearly] = await db.promise().query(
+        `SELECT 
+           DATE_FORMAT(created_at, '%M %Y') AS month,
+           SUM(CASE WHEN type='income' THEN amount ELSE 0 END) AS income,
+           SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS expense
+         FROM expenses
+         WHERE user_id = ?
+         GROUP BY DATE_FORMAT(created_at, '%M %Y')
+         ORDER BY MIN(created_at)`,
+        [userId]
+      );
+      console.log("✅ Yearly summary fetched:", yearly.length);
+    } catch (err) {
+      console.error("❌ Error fetching yearly summary:", err);
+      return res.status(500).json({ error: "DB error - yearly summary" });
+    }
+
+    // === Create Excel Workbook ===
+    let workbook;
+    try {
+      workbook = new ExcelJS.Workbook();
+
+      // --- Sheet 1: Detailed Expenses ---
+      const sheet1 = workbook.addWorksheet("Detailed Expenses");
+      sheet1.columns = [
+        { header: "Date", key: "date", width: 15 },
+        { header: "Description", key: "description", width: 25 },
+        { header: "Category", key: "category", width: 15 },
+        { header: "Income", key: "income", width: 15 },
+        { header: "Expense", key: "expense", width: 15 },
+        { header: "Savings", key: "savings", width: 15 }, // ✅ Added Savings column
+      ];
+
+     rows.forEach((row) => {
+  sheet1.addRow({
+    date: new Date(row.date).toLocaleDateString(),
+    description: row.description,
+    category: row.category,
+    income: row.type === "income" ? Number(row.amount) : null,   // force number
+    expense: row.type === "expense" ? Number(row.amount) : null, // force number
+    savings: null,
+  });
+});
+
+// === Totals Row ===
+const totalIncome = rows
+  .filter((r) => r.type === "income")
+  .reduce((acc, r) => acc + Number(r.amount), 0);
+
+const totalExpense = rows
+  .filter((r) => r.type === "expense")
+  .reduce((acc, r) => acc + Number(r.amount), 0);
+
+sheet1.addRow({});
+sheet1.addRow({
+  description: "TOTAL",
+  income: totalIncome,
+  expense: totalExpense,
+  savings: totalIncome - totalExpense,
+});
+
+
+
+      // --- Sheet 2: Yearly Summary ---
+      const sheet2 = workbook.addWorksheet("Yearly Summary");
+sheet2.columns = [
+  { header: "Month", key: "month", width: 20 },
+  { header: "Income", key: "income", width: 15 },
+  { header: "Expense", key: "expense", width: 15 },
+  { header: "Savings", key: "savings", width: 15 }, // ✅ Added Savings column
+];
+
+
+yearly.forEach((row) => {
+  sheet2.addRow({
+    month: row.month,
+    income: Number(row.income),
+    expense: Number(row.expense),
+    savings: Number(row.income) - Number(row.expense),
+  });
+});
+
+// Totals
+const yearlyIncome = yearly.reduce((acc, r) => acc + Number(r.income), 0);
+const yearlyExpense = yearly.reduce((acc, r) => acc + Number(r.expense), 0);
+
+sheet2.addRow({});
+sheet2.addRow({
+  month: "TOTAL",
+  income: yearlyIncome,
+  expense: yearlyExpense,
+  savings: yearlyIncome - yearlyExpense,
+});
+
+
+      console.log("✅ Yearly Summary sheet filled:", yearly.length);
+    } catch (err) {
+      console.error("❌ Error building Excel workbook:", err);
+      return res.status(500).json({ error: "Workbook creation failed" });
+    }
+
+    // === Generate buffer ===
+    let buffer;
+    try {
+      buffer = await workbook.xlsx.writeBuffer();
+      console.log("✅ Excel buffer generated, size:", buffer.byteLength);
+
+      // Save locally for debugging
+      const debugPath = path.join(__dirname, "debug-report.xlsx");
+      fs.writeFileSync(debugPath, buffer);
+      console.log("💾 Debug Excel saved at:", debugPath);
+    } catch (err) {
+      console.error("❌ Error generating Excel buffer:", err);
+      return res.status(500).json({ error: "Buffer generation failed" });
+    }
+
+    // === Send Response ===
+    try {
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=report-${period || "full"}.xlsx`
+      );
+
+      res.send(buffer);
+      console.log("📤 Excel file sent successfully.");
+    } catch (err) {
+      console.error("❌ Error sending Excel file:", err);
+      res.status(500).json({ error: "Failed to send Excel file" });
+    }
+  } catch (err) {
+    console.error("❌ Unexpected error in downloadReport:", err);
+    res.status(500).json({ error: "Unexpected error" });
+  }
+};
+
+
+
+
+
+
+
 
 module.exports = { 
   getPremiumExpenses, 
@@ -241,5 +421,5 @@ module.exports = {
   updatePremiumExpense, 
   deletePremiumExpense,
   getLeaderboard,
-  getReport
+  getReport,downloadReport
 };
