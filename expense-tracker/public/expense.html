@@ -3,32 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Tracker</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Expense Tracker - Non Premium</title>
+  <link rel="stylesheet" href="expense.css">
 </head>
 <body>
-  <div id="expense-container" style="display: none;">
+  <div id="expense-container">
     <h1>Expense Tracker</h1>
 
-    <!-- Premium Button -->
-    <button id="buy-premium-btn">Buy Premium</button>
+    <!-- Top Buttons (Premium + Logout) -->
+    <div class="top-bar">
+      <button id="buy-premium-btn">Buy Premium</button>
+      <button id="logout-btn">Logout</button>
+    </div>
 
     <!-- Add Expense Form -->
-    <form id="expense-form">
-      <input type="number" id="amount" placeholder="Amount spent" required><br>
-      <input type="text" id="description" placeholder="Description" required><br>
-      <select id="category" required>
+    <form id="expense-form" class="expense-row">
+      <input type="number" id="amount" placeholder="Amount spent" required class="form-input">
+      <input type="text" id="description" placeholder="Description" required class="form-input">
+      <select id="category" required class="form-input">
         <option value="">Select Category</option>
         <option value="Food">Food</option>
         <option value="Petrol">Petrol</option>
         <option value="Salary">Salary</option>
         <option value="Others">Others</option>
-      </select><br>
-      <button type="submit">Add Expense</button>
+      </select>
+      <button type="submit" class="add-btn">Add Expense</button>
     </form>
 
     <h2>Expense List</h2>
-    <table border="1" id="expense-table">
+    <table id="expense-table">
       <thead>
         <tr>
           <th>Amount</th>
@@ -39,7 +42,24 @@
       </thead>
       <tbody id="expense-body"></tbody>
     </table>
+
+    <!-- Locked Download Button -->
+    <button id="download-btn" class="locked">Download Expenses</button>
   </div>
+
+  <script>
+    // Handle Download Button (non-premium users)
+    document.getElementById("download-btn").addEventListener("click", function (e) {
+      e.preventDefault();
+      alert("Buy Premium to use this feature!");
+    });
+
+    // Handle Logout
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
+  </script>
 
   <script src="expense.js"></script>
 </body>

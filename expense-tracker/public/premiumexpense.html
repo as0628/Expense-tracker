@@ -4,162 +4,131 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Premium Expense Tracker</title>
-  <style>
-    :root{
-      --teal:#009688; --teal-dark:#00796b; --bg:#f4f7f9; --card:#fff; --text:#333;
-      --border:#e5e7eb;
-    }
-    *{box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0}
-    h1{margin:18px 0;text-align:center;color:var(--text)}
-    .container{width:92%;max-width:1100px;margin:0 auto 40px}
-    .premium-badge{margin:4px 0 18px;text-align:center;font-weight:700;color:#00897b}
-
-    button{background:var(--teal);color:#fff;border:0;border-radius:10px;
-      padding:10px 16px;font-weight:600;cursor:pointer;transition:.15s;outline:0}
-    button:hover{background:var(--teal-dark)}
-    .btn-secondary{background:#e5e7eb;color:#111}
-    .btn-secondary:hover{background:#d1d5db}
-
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
-
-    .card{background:var(--card);border-radius:14px;padding:16px;
-      box-shadow:0 8px 30px rgba(0,0,0,.06);border:1px solid var(--border)}
-    .card h3{margin:0 0 8px}
-
-    .form-input{width:100%;padding:10px 12px;margin:7px 0;border:1px solid #cfd8dc;
-      border-radius:8px}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{border:1px solid #dbe2e8;padding:10px;text-align:left}
-    th{background:#0f9a8b;color:#fff}
-    .hidden{display:none}
-
-    .report-buttons{display:flex;gap:10px;margin-bottom:12px}
-    .download-btn{width:100%;font-size:16px}
-
-    /* 🔴 Logout button style */
-    .logout-btn{
-      background:#f44336;
-      margin:10px;
-    }
-    .logout-btn:hover{
-      background:#d32f2f;
-    }
-  </style>
+  <link rel="stylesheet" href="premiumexpense.css" />
 </head>
 <body>
   <div id="expense-container">
     <h1>Expense Tracker</h1>
-    <div class="container">
-      <div class="premium-badge">🌟 You are a Premium User 🌟</div>
 
-      <!-- 🔴 Logout Button -->
-      <button class="logout-btn" id="logout-btn">Logout</button>
-
-      <button id="show-leaderboard-btn">Show Leaderboard</button>
-
-      <!-- Add Expense -->
-      <div class="card" style="margin-top:14px;">
-        <h3>Add Expense</h3>
-        <form id="expense-form">
-          <input type="number" id="amount" class="form-input" placeholder="Amount spent" required />
-          <input type="text" id="description" class="form-input" placeholder="Description" required />
-
-          <select id="category" class="form-input" required>
-            <option value="">Select Category</option>
-            <option value="Food">Food</option>
-            <option value="Petrol">Petrol</option>
-            <option value="Salary">Salary</option>
-            <option value="Others">Others</option>
-          </select>
-
-          <select id="type" class="form-input" required>
-            <option value="">Select Type</option>
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
-
-          <button type="submit">Add Expense</button>
-        </form>
+    <!-- 🔴 Compact top bar -->
+    <div class="top-bar">
+      <div class="right-controls">
+        <div class="premium-badge">🌟 You are a Premium User 🌟</div>
+        <button id="show-leaderboard-btn">Show Leaderboard</button>
+        <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
+    </div>
 
-      <div class="grid" style="margin-top:16px;">
-        <!-- Expense List -->
-        <div class="card">
-          <h3>Expense List</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Amount</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Type</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="expense-body"></tbody>
-          </table>
-        </div>
+    <!-- Add Expense -->
+    <div class="card">
+  <h3>Add Expense</h3>
+  <form id="expense-form" class="expense-form-layout">
+    <div class="expense-row">
+      <input type="number" id="amount" class="form-input" placeholder="Amount" required />
+      <input type="text" id="description" class="form-input" placeholder="Description" required />
+      <select id="category" class="form-input" required>
+        <option value="">Select Category</option>
+        <option value="Food">Food</option>
+        <option value="Petrol">Petrol</option>
+        <option value="Salary">Salary</option>
+        <option value="Others">Others</option>
+      </select>
+      <select id="type" class="form-input" required>
+        <option value="">Select Type</option>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+      <button type="submit" class="add-btn">Add Expense</button>
+    </div>
+  </form>
+</div>
 
-        <!-- Expense Reports -->
-        <div class="card">
-          <h3>Expense Reports</h3>
-          <div class="report-buttons">
-            <button class="btn-secondary" onclick="loadReport('daily')">Daily</button>
-            <button class="btn-secondary" onclick="loadReport('weekly')">Weekly</button>
-            <button class="btn-secondary" onclick="loadReport('monthly')">Monthly</button>
-          </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Date/Period</th>
-                <th>Total Income</th>
-                <th>Total Expense</th>
-              </tr>
-            </thead>
-            <tbody id="report-body"></tbody>
-          </table>
-
-          <button id="download-btn" class="download-btn" disabled>⬇ Download Report</button>
-        </div>
-      </div>
-
-      <!-- Leaderboard (hidden until clicked) -->
-      <div class="card hidden" id="leaderboard-section" style="margin-top:20px;">
-        <h3>Leaderboard</h3>
+    <div class="grid">
+      <!-- Expense List -->
+      <div class="card">
+        <h3>Expense List</h3>
         <table>
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>User</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="expense-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Expense Reports -->
+      <div class="card">
+        <h3>Expense Reports</h3>
+        <div class="report-buttons">
+          <button class="btn-secondary" onclick="loadReport('daily')">Daily</button>
+          <button class="btn-secondary" onclick="loadReport('weekly')">Weekly</button>
+          <button class="btn-secondary" onclick="loadReport('monthly')">Monthly</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date/Period</th>
+              <th>Total Income</th>
               <th>Total Expense</th>
             </tr>
           </thead>
-          <tbody id="leaderboard-body"></tbody>
+          <tbody id="report-body"></tbody>
         </table>
+        <button id="download-btn" class="download-btn" disabled>⬇ Download Report</button>
       </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card hidden" id="leaderboard-section">
+      <h3>Leaderboard</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th>Total Expense</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
     </div>
   </div>
 
-    <script src="premiumexpense.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const logoutBtn = document.getElementById("logout-btn");
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-          // Clear token/session
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+  <script src="premiumexpense.js"></script>
+<script>
+   document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.getElementById("logout-btn");
+    console.log("Logout button element:", logoutBtn);
 
-          // Redirect to signup
-          window.location.href = "signup.html";
-        });
-      }
-    });
-  </script>
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        console.log("Logout clicked!");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        alert("You are logged out!");
+        window.location.href = "login.html";  // make sure this file exists
+      });
+    } else {
+      console.error("❌ Logout button not found in DOM");
+    }
+  
 
+    if (leaderboardBtn) {
+      leaderboardBtn.addEventListener("click", () => {
+        leaderboardSection.classList.toggle("hidden");
+        leaderboardBtn.textContent = leaderboardSection.classList.contains("hidden")
+          ? "Show Leaderboard"
+          : "Hide Leaderboard";
+      });
+    }
+  });
+</script>
 
 </body>
 </html>

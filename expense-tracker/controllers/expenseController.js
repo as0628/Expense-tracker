@@ -24,12 +24,15 @@ const addExpense = (req, res) => {
     (err, result) => {
       if (err) return res.status(500).json({ error: 'Database error' });
 
-      // ✅ Update totalExpenses in signup table
+      // ✅ Update total_expense in signup table
       db.query(
-        'UPDATE signup SET totalExpenses = totalExpenses + ? WHERE id = ?',
+        'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
         [amount, userId],
         (err2) => {
-          if (err2) return res.status(500).json({ error: 'Failed to update total expenses' });
+          if (err2) {
+            console.error("❌ Error updating total_expense:", err2.sqlMessage);
+            return res.status(500).json({ error: 'Failed to update total expenses' });
+          }
           res.status(201).json({ message: 'Expense added', expenseId: result.insertId });
         }
       );
@@ -43,8 +46,7 @@ const updateExpense = (req, res) => {
   const { amount, description, category } = req.body;
   const userId = req.user.id;
 
-  // ⚠️ Trickier: we need to adjust the totalExpenses properly
-  // So we first fetch the old expense amount
+  // First fetch the old expense amount
   db.query(
     'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
@@ -63,12 +65,15 @@ const updateExpense = (req, res) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
           if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });
 
-          // ✅ Update totalExpenses correctly (add or subtract difference)
+          // ✅ Update total_expense correctly (add or subtract difference)
           db.query(
-            'UPDATE signup SET totalExpenses = totalExpenses + ? WHERE id = ?',
+            'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
             [difference, userId],
             (err3) => {
-              if (err3) return res.status(500).json({ error: 'Failed to update total expenses' });
+              if (err3) {
+                console.error("❌ Error updating total_expense:", err3.sqlMessage);
+                return res.status(500).json({ error: 'Failed to update total expenses' });
+              }
               res.json({ message: 'Expense updated' });
             }
           );
@@ -101,12 +106,15 @@ const deleteExpense = (req, res) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
           if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });
 
-          // ✅ Subtract from totalExpenses
+          // ✅ Subtract from total_expense
           db.query(
-            'UPDATE signup SET totalExpenses = totalExpenses - ? WHERE id = ?',
+            'UPDATE signup SET total_expense = total_expense - ? WHERE id = ?',
             [amount, userId],
             (err3) => {
-              if (err3) return res.status(500).json({ error: 'Failed to update total expenses' });
+              if (err3) {
+                console.error("❌ Error updating total_expense:", err3.sqlMessage);
+                return res.status(500).json({ error: 'Failed to update total expenses' });
+              }
               res.json({ message: 'Expense deleted' });
             }
           );
