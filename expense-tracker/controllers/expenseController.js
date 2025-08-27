@@ -11,16 +11,16 @@ const getExpenses = (req, res) => {
 
 // Add new expense
 const addExpense = (req, res) => {
-  const { amount, description, category } = req.body;
+  const { amount, description, category, note } = req.body;  // ✅ include note
   const userId = req.user.id;
 
   if (!amount || !description || !category) {
-    return res.status(400).json({ error: 'All fields are required' });
+    return res.status(400).json({ error: 'Amount, description and category are required' });
   }
 
   db.query(
-    'INSERT INTO expenses (amount, description, category, user_id) VALUES (?, ?, ?, ?)',
-    [amount, description, category, userId],
+    'INSERT INTO expenses (amount, description, category, note, user_id) VALUES (?, ?, ?, ?, ?)',
+    [amount, description, category, note || null, userId],  // ✅ insert note
     (err, result) => {
       if (err) return res.status(500).json({ error: 'Database error' });
 
@@ -43,7 +43,7 @@ const addExpense = (req, res) => {
 // Update expense
 const updateExpense = (req, res) => {
   const { id } = req.params;
-  const { amount, description, category } = req.body;
+  const { amount, description, category, note } = req.body;  // ✅ include note
   const userId = req.user.id;
 
   // First fetch the old expense amount
@@ -59,8 +59,8 @@ const updateExpense = (req, res) => {
 
       // Update the expense
       db.query(
-        'UPDATE expenses SET amount = ?, description = ?, category = ? WHERE id = ? AND user_id = ?',
-        [amount, description, category, id, userId],
+        'UPDATE expenses SET amount = ?, description = ?, category = ?, note = ? WHERE id = ? AND user_id = ?',
+        [amount, description, category, note || null, id, userId],  // ✅ update note
         (err2, result) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
           if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });

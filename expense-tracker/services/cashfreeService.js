@@ -18,7 +18,7 @@ const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
           customer_email: "test@gmail.com",
         },
         order_meta: {
-          return_url: `http://127.0.0.1:5500/expense-tracker/public/payment-status.html?order_id=${orderId}`,
+          return_url: `http://127.0.0.1:5500/expense-tracker/public/html/payment-status.html?order_id=${orderId}`,
         },
       },
       {

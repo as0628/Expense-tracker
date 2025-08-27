@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expense Tracker - Non Premium</title>
-  <link rel="stylesheet" href="expense.css">
+  <link rel="stylesheet" href="../css/expense.css">
 </head>
 <body>
   <div id="expense-container">
     <h1>Expense Tracker</h1>
-
+    
     <!-- Top Buttons (Premium + Logout) -->
     <div class="top-bar">
       <button id="buy-premium-btn">Buy Premium</button>
@@ -27,6 +27,9 @@
         <option value="Salary">Salary</option>
         <option value="Others">Others</option>
       </select>
+      <!-- ✅ New Note input -->
+      <input type="text" id="note" placeholder="Note (optional)" class="form-input">
+
       <button type="submit" class="add-btn">Add Expense</button>
     </form>
 
@@ -37,6 +40,7 @@
           <th>Amount</th>
           <th>Description</th>
           <th>Category</th>
+          <th>Note</th> <!-- ✅ Added Note column -->
           <th>Action</th>
         </tr>
       </thead>
@@ -60,7 +64,7 @@
       window.location.href = "login.html";
     });
   </script>
-
-  <script src="expense.js"></script>
+  
+  <script src="../js/expense.js"></script>
 </body>
 </html>

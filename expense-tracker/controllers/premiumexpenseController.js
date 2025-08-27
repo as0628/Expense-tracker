@@ -6,54 +6,69 @@ const path = require("path");
 // ==========================
 // Get all expenses (for premium user)
 // ==========================
+// GET /api/premiumexpenses?page=1&limit=10
 const getPremiumExpenses = (req, res) => {
   const userId = req.user.id;
-  db.query(
-    `SELECT id, amount, description, category, type, created_at AS createdAt
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10; // user decides
+  const offset = (page - 1) * limit;
 
-     FROM expenses 
-     WHERE user_id = ? 
-     ORDER BY created_at DESC`,
+  // Fetch total count
+  db.query(
+    `SELECT COUNT(*) AS total FROM expenses WHERE user_id = ?`,
     [userId],
-    (err, results) => {
-      if (err) {
-        console.error("Error fetching expenses:", err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json(results);
+    (err, countResult) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      const total = countResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      db.query(
+        `SELECT id, amount, description, category, type, note, created_at 
+         FROM expenses 
+         WHERE user_id = ? 
+         ORDER BY created_at DESC 
+         LIMIT ? OFFSET ?`,
+        [userId, limit, offset],
+        (err2, results) => {
+          if (err2) return res.status(500).json({ error: "Database error" });
+
+          res.json({
+            expenses: results,
+            pagination: { page, limit, total, totalPages },
+          });
+        }
+      );
     }
   );
 };
 
+
 // ==========================
 // Add new expense & update total_expense
 // ==========================
-// ==========================
-// Add new expense & update total_expense
-// ==========================
+
 const addPremiumExpense = (req, res) => {
-  const { amount, description, category, type } = req.body; // ✅ include type
+  const { amount, description, category, type, note } = req.body; 
   const userId = req.user.id;
 
   if (!amount || !description || !category || !type) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  // ✅ validate type
   if (type !== "income" && type !== "expense") {
     return res.status(400).json({ error: "Invalid type (must be income or expense)" });
   }
 
   db.query(
-    'INSERT INTO expenses (amount, description, category, type, user_id) VALUES (?, ?, ?, ?, ?)',
-    [amount, description, category, type, userId],
+    'INSERT INTO expenses (amount, description, category, type, note, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+    [amount, description, category, type, note || null, userId],
     (err, result) => {
       if (err) {
         console.error("Error inserting expense:", err);
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // ✅ only update signup.total_expense if it's an expense
       if (type === "expense") {
         db.query(
           'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
@@ -67,19 +82,19 @@ const addPremiumExpense = (req, res) => {
           }
         );
       } else {
-        // if income, just return success
         res.status(201).json({ message: 'Income added', expenseId: result.insertId });
       }
     }
   );
 };
 
+
 // ==========================
 // Update expense & adjust total_expense
 // ==========================
 const updatePremiumExpense = (req, res) => {
   const { id } = req.params;
-  const { amount, description, category, type } = req.body;
+  const { amount, description, category, type, note } = req.body;
   const userId = req.user.id;
 
   db.query(
@@ -92,8 +107,8 @@ const updatePremiumExpense = (req, res) => {
       const oldAmount = rows[0].amount;
 
       db.query(
-        'UPDATE expenses SET amount = ?, description = ?, category = ?, type = ? WHERE id = ? AND user_id = ?',
-[amount, description, category, type, id, userId],
+        'UPDATE expenses SET amount = ?, description = ?, category = ?, type = ?, note = ? WHERE id = ? AND user_id = ?',
+        [amount, description, category, type, note || null, id, userId],
         (err2, result) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
 
@@ -254,7 +269,7 @@ const downloadReport = async (req, res) => {
     try {
       [rows] = await db.promise().query(
         `SELECT 
-           id, amount, description, category, type, created_at AS date
+           id, amount, description, category, type, note, created_at AS date
          FROM expenses
          WHERE user_id = ?
          ORDER BY created_at ASC`,
@@ -286,6 +301,24 @@ const downloadReport = async (req, res) => {
       return res.status(500).json({ error: "DB error - yearly summary" });
     }
 
+    // === Notes ===
+    let notes;
+    try {
+      [notes] = await db.promise().query(
+        `SELECT created_at AS date, note
+         FROM expenses
+         WHERE user_id = ? 
+           AND note IS NOT NULL 
+           AND note <> ''
+         ORDER BY created_at ASC`,
+        [userId]
+      );
+      console.log("✅ Notes fetched:", notes.length);
+    } catch (err) {
+      console.error("❌ Error fetching notes:", err);
+      return res.status(500).json({ error: "DB error - notes" });
+    }
+
     // === Create Excel Workbook ===
     let workbook;
     try {
@@ -299,72 +332,90 @@ const downloadReport = async (req, res) => {
         { header: "Category", key: "category", width: 15 },
         { header: "Income", key: "income", width: 15 },
         { header: "Expense", key: "expense", width: 15 },
-        { header: "Savings", key: "savings", width: 15 }, // ✅ Added Savings column
+        { header: "Savings", key: "savings", width: 15 },
+        { header: "Note", key: "note", width: 40 }, // ✅ Added Note here too
       ];
 
-     rows.forEach((row) => {
-  sheet1.addRow({
-    date: new Date(row.date).toLocaleDateString(),
-    description: row.description,
-    category: row.category,
-    income: row.type === "income" ? Number(row.amount) : null,   // force number
-    expense: row.type === "expense" ? Number(row.amount) : null, // force number
-    savings: null,
-  });
-});
+      rows.forEach((row) => {
+        sheet1.addRow({
+          date: new Date(row.date).toLocaleDateString(),
+          description: row.description,
+          category: row.category,
+          income: row.type === "income" ? Number(row.amount) : null,
+          expense: row.type === "expense" ? Number(row.amount) : null,
+          savings: null,
+          note: row.note || "",
+        });
+      });
 
-// === Totals Row ===
-const totalIncome = rows
-  .filter((r) => r.type === "income")
-  .reduce((acc, r) => acc + Number(r.amount), 0);
+      // Totals
+      const totalIncome = rows
+        .filter((r) => r.type === "income")
+        .reduce((acc, r) => acc + Number(r.amount), 0);
 
-const totalExpense = rows
-  .filter((r) => r.type === "expense")
-  .reduce((acc, r) => acc + Number(r.amount), 0);
+      const totalExpense = rows
+        .filter((r) => r.type === "expense")
+        .reduce((acc, r) => acc + Number(r.amount), 0);
 
-sheet1.addRow({});
-sheet1.addRow({
-  description: "TOTAL",
-  income: totalIncome,
-  expense: totalExpense,
-  savings: totalIncome - totalExpense,
-});
-
-
+      sheet1.addRow({});
+      sheet1.addRow({
+        description: "TOTAL",
+        income: totalIncome,
+        expense: totalExpense,
+        savings: totalIncome - totalExpense,
+      });
 
       // --- Sheet 2: Yearly Summary ---
       const sheet2 = workbook.addWorksheet("Yearly Summary");
-sheet2.columns = [
-  { header: "Month", key: "month", width: 20 },
-  { header: "Income", key: "income", width: 15 },
-  { header: "Expense", key: "expense", width: 15 },
-  { header: "Savings", key: "savings", width: 15 }, // ✅ Added Savings column
-];
+      sheet2.columns = [
+        { header: "Month", key: "month", width: 20 },
+        { header: "Income", key: "income", width: 15 },
+        { header: "Expense", key: "expense", width: 15 },
+        { header: "Savings", key: "savings", width: 15 },
+      ];
 
+      yearly.forEach((row) => {
+        sheet2.addRow({
+          month: row.month,
+          income: Number(row.income),
+          expense: Number(row.expense),
+          savings: Number(row.income) - Number(row.expense),
+        });
+      });
 
-yearly.forEach((row) => {
-  sheet2.addRow({
-    month: row.month,
-    income: Number(row.income),
-    expense: Number(row.expense),
-    savings: Number(row.income) - Number(row.expense),
-  });
-});
+      const yearlyIncome = yearly.reduce((acc, r) => acc + Number(r.income), 0);
+      const yearlyExpense = yearly.reduce((acc, r) => acc + Number(r.expense), 0);
 
-// Totals
-const yearlyIncome = yearly.reduce((acc, r) => acc + Number(r.income), 0);
-const yearlyExpense = yearly.reduce((acc, r) => acc + Number(r.expense), 0);
+      sheet2.addRow({});
+      sheet2.addRow({
+        month: "TOTAL",
+        income: yearlyIncome,
+        expense: yearlyExpense,
+        savings: yearlyIncome - yearlyExpense,
+      });
 
-sheet2.addRow({});
-sheet2.addRow({
-  month: "TOTAL",
-  income: yearlyIncome,
-  expense: yearlyExpense,
-  savings: yearlyIncome - yearlyExpense,
-});
+      // --- Sheet 3: Yearly Notes ---
+      const sheet3 = workbook.addWorksheet("Yearly Notes");
+      sheet3.columns = [
+        { header: "Date", key: "date", width: 20 },
+        { header: "Note", key: "note", width: 50 },
+      ];
 
+      if (notes.length > 0) {
+        notes.forEach((row) => {
+          sheet3.addRow({
+            date: new Date(row.date).toLocaleDateString(),
+            note: row.note,
+          });
+        });
+      } else {
+        sheet3.addRow({
+          date: "—",
+          note: "No notes found",
+        });
+      }
 
-      console.log("✅ Yearly Summary sheet filled:", yearly.length);
+      console.log("✅ All sheets filled");
     } catch (err) {
       console.error("❌ Error building Excel workbook:", err);
       return res.status(500).json({ error: "Workbook creation failed" });
@@ -407,6 +458,7 @@ sheet2.addRow({
     res.status(500).json({ error: "Unexpected error" });
   }
 };
+
 
 
 

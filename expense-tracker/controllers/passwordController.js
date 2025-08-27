@@ -63,7 +63,7 @@ const resetPasswordForm = (req, res) => {
       }
 
       // ✅ Better: Serve frontend page instead of inline HTML
-      res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
+      res.sendFile(path.join(__dirname, "../public/html/resetpassword.html"));
     }
   );
 };
@@ -117,7 +117,7 @@ const resetPasswordSubmit = (req, res) => {
                 return res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",
-                  redirect: "/login.html" // optional, frontend can auto-redirect
+                  redirect: "/html/login.html" // optional, frontend can auto-redirect
                 });
               }
             );
