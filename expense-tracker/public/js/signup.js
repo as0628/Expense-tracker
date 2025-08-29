@@ -19,9 +19,9 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
     const data = await res.json();
     if (res.ok) {
       console.log('Success response:', data);
-      alert('Signup successful!');
+    //  alert('Signup successful!');
       // You could redirect here if needed
-      // window.location.href = 'login.html';
+       window.location.href = 'login.html';
     } else {
       console.error('Server error:', data);
       alert(data.error || 'Something went wrong');

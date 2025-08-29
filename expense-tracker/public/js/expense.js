@@ -70,7 +70,7 @@ async function loadExpensesWithPagination() {
 document.addEventListener('DOMContentLoaded', loadExpensesWithPagination);
 
 if (!token) {
-  alert("You must log in first!");
+//  alert("You must log in first!");
   window.location.href = "login.html";
 } else {
   // Show page if logged in

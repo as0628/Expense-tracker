@@ -1,7 +1,7 @@
 // ===== JWT check =====
 const token = localStorage.getItem("token");
 if (!token) {
-  alert("You must log in first!");
+//  alert("You must log in first!");
   window.location.href = "login.html";
 }
 
@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         leaderboardBtn.textContent = "Hide Leaderboard";
       } catch (err) {
         console.error("Error loading leaderboard:", err);
-        alert("Failed to load leaderboard");
+        //alert("Failed to load leaderboard");
       }
     } else {
       leaderboardSection.classList.add("hidden");
@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
       downloadBtn.dataset.period = period;
     } catch (err) {
       console.error("Error loading report:", err);
-      alert("Failed to load report.");
+     // alert("Failed to load report.");
     }
   };
 
@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("📤 Report downloaded:", a.download);
     } catch (err) {
       console.error("Error downloading:", err);
-      alert("Download failed.");
+     // alert("Download failed.");
     }
   });
 

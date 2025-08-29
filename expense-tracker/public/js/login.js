@@ -20,7 +20,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       localStorage.setItem('userId', data.userId);
       localStorage.setItem('isPremium', data.isPremium);
 
-      alert('Login successful!');
+      //alert('Login successful!');
 
       // ✅ Redirect based on premium status
       if (data.isPremium === 1 || data.isPremium === true) {
@@ -33,6 +33,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
   } catch (err) {
     console.error('Login error:', err);
-    alert('Something went wrong');
+   // alert('Something went wrong');
   }
 });
