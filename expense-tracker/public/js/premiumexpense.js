@@ -138,6 +138,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const reportBody = document.getElementById("report-body");
   const downloadBtn = document.getElementById("download-btn");
   const pageSizeSelect = document.getElementById("pageSizeSelect");
+  const historyBtn = document.getElementById("toggle-history-btn");
+const historySection = document.getElementById("history-section");
+
+historyBtn.addEventListener("click", async () => {
+  const isHidden = historySection.classList.contains("hidden");
+
+  if (isHidden) {
+    await loadExportHistory(); // load only when showing
+    historySection.classList.remove("hidden");
+    historyBtn.textContent = "Hide History";
+  } else {
+    historySection.classList.add("hidden");
+    historyBtn.textContent = "Show History";
+  }
+});
+
 
   // --- Leaderboard toggle ---
   leaderboardBtn.addEventListener("click", async () => {
@@ -211,37 +227,62 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // --- Download ---
-  downloadBtn.addEventListener("click", async () => {
-    const period = downloadBtn.dataset.period || "monthly";
-    try {
-      const res = await fetch(
-        `http://localhost:3000/api/premiumexpenses/download?period=${period}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Download failed");
+// --- Download (via S3 URL) ---
+downloadBtn.addEventListener("click", async () => {
+  const period = downloadBtn.dataset.period || "monthly";
+  try {
+    const res = await fetch(
+      `http://localhost:3000/api/premiumexpenses/download?period=${period}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) throw new Error("Download failed");
 
-      const blob = await res.blob();
-      const contentType = res.headers.get("content-type") || "";
+    const data = await res.json();
+    if (!data.fileUrl) throw new Error("No file URL returned");
 
-      const ext = contentType.includes("spreadsheetml") ? "xlsx" :
-                  contentType.includes("pdf") ? "pdf" :
-                  contentType.includes("csv") ? "csv" : "dat";
+    // ✅ Open in new tab (or auto-download)
+    window.open(data.fileUrl, "_blank");
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `ExpenseReport-${period}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+    console.log("📤 Report ready at:", data.fileUrl);
+  } catch (err) {
+    console.error("Error downloading:", err);
+    alert("Download failed.");
+  }
+});
+// ====== Load Export History ======
+async function loadExportHistory() {
+  try {
+    const res = await fetch("http://localhost:3000/api/premiumexpenses/history", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
 
-      console.log("📤 Report downloaded:", a.download);
-    } catch (err) {
-      console.error("Error downloading:", err);
-     // alert("Download failed.");
+    const tbody = document.getElementById("history-body");
+    tbody.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="3">No reports generated yet.</td>`;
+      tbody.appendChild(tr);
+      return;
     }
-  });
+
+    data.forEach((file, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${new Date(file.created_at).toLocaleString()}</td>
+        <td><a href="${file.url}" target="_blank">⬇ Download</a></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Error loading history:", err);
+  }
+}
+
+
+window.loadExportHistory = loadExportHistory;
 
   // --- Page size dropdown ---
   const savedSize = localStorage.getItem("pageSize") || 10;

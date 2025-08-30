@@ -1,8 +1,8 @@
-const db = require('../config/db');
-
 const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
+const db = require("../config/db");
+const { uploadToS3 } = require("../utils/s3");
 // ==========================
 // Get all expenses (for premium user)
 // ==========================
@@ -259,208 +259,172 @@ const getReport = async (req, res) => {
 
 const downloadReport = async (req, res) => {
   try {
+    if (!req.user.isPremium) {
+      return res.status(401).json({ error: "Unauthorized - Premium users only" });
+    }
+
     const { period } = req.query;
     const userId = req.user.id;
 
     console.log("📥 Generating Excel Report for user:", userId, "period:", period);
 
     // === Detailed Transactions ===
-    let rows;
-    try {
-      [rows] = await db.promise().query(
-        `SELECT 
-           id, amount, description, category, type, note, created_at AS date
-         FROM expenses
-         WHERE user_id = ?
-         ORDER BY created_at ASC`,
-        [userId]
-      );
-      console.log("✅ Detailed transactions fetched:", rows.length);
-    } catch (err) {
-      console.error("❌ Error fetching detailed transactions:", err);
-      return res.status(500).json({ error: "DB error - details" });
-    }
+    const [rows] = await db.promise().query(
+      `SELECT 
+         id, amount, description, category, type, note, created_at AS date
+       FROM expenses
+       WHERE user_id = ?
+       ORDER BY created_at ASC`,
+      [userId]
+    );
 
-    // === Monthly (Yearly Summary) ===
-    let yearly;
-    try {
-      [yearly] = await db.promise().query(
-        `SELECT 
-           DATE_FORMAT(created_at, '%M %Y') AS month,
-           SUM(CASE WHEN type='income' THEN amount ELSE 0 END) AS income,
-           SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS expense
-         FROM expenses
-         WHERE user_id = ?
-         GROUP BY DATE_FORMAT(created_at, '%M %Y')
-         ORDER BY MIN(created_at)`,
-        [userId]
-      );
-      console.log("✅ Yearly summary fetched:", yearly.length);
-    } catch (err) {
-      console.error("❌ Error fetching yearly summary:", err);
-      return res.status(500).json({ error: "DB error - yearly summary" });
-    }
+    // === Yearly Summary ===
+    const [yearly] = await db.promise().query(
+      `SELECT 
+         DATE_FORMAT(created_at, '%M %Y') AS month,
+         SUM(CASE WHEN type='income' THEN amount ELSE 0 END) AS income,
+         SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS expense
+       FROM expenses
+       WHERE user_id = ?
+       GROUP BY DATE_FORMAT(created_at, '%M %Y')
+       ORDER BY MIN(created_at)`,
+      [userId]
+    );
 
     // === Notes ===
-    let notes;
-    try {
-      [notes] = await db.promise().query(
-        `SELECT created_at AS date, note
-         FROM expenses
-         WHERE user_id = ? 
-           AND note IS NOT NULL 
-           AND note <> ''
-         ORDER BY created_at ASC`,
-        [userId]
-      );
-      console.log("✅ Notes fetched:", notes.length);
-    } catch (err) {
-      console.error("❌ Error fetching notes:", err);
-      return res.status(500).json({ error: "DB error - notes" });
-    }
+    const [notes] = await db.promise().query(
+      `SELECT created_at AS date, note
+       FROM expenses
+       WHERE user_id = ? AND note IS NOT NULL AND note <> ''
+       ORDER BY created_at ASC`,
+      [userId]
+    );
 
     // === Create Excel Workbook ===
-    let workbook;
-    try {
-      workbook = new ExcelJS.Workbook();
+    const workbook = new ExcelJS.Workbook();
 
-      // --- Sheet 1: Detailed Expenses ---
-      const sheet1 = workbook.addWorksheet("Detailed Expenses");
-      sheet1.columns = [
-        { header: "Date", key: "date", width: 15 },
-        { header: "Description", key: "description", width: 25 },
-        { header: "Category", key: "category", width: 15 },
-        { header: "Income", key: "income", width: 15 },
-        { header: "Expense", key: "expense", width: 15 },
-        { header: "Savings", key: "savings", width: 15 },
-        { header: "Note", key: "note", width: 40 }, // ✅ Added Note here too
-      ];
-
-      rows.forEach((row) => {
-        sheet1.addRow({
-          date: new Date(row.date).toLocaleDateString(),
-          description: row.description,
-          category: row.category,
-          income: row.type === "income" ? Number(row.amount) : null,
-          expense: row.type === "expense" ? Number(row.amount) : null,
-          savings: null,
-          note: row.note || "",
-        });
-      });
-
-      // Totals
-      const totalIncome = rows
-        .filter((r) => r.type === "income")
-        .reduce((acc, r) => acc + Number(r.amount), 0);
-
-      const totalExpense = rows
-        .filter((r) => r.type === "expense")
-        .reduce((acc, r) => acc + Number(r.amount), 0);
-
-      sheet1.addRow({});
+    // --- Sheet 1: Detailed Expenses ---
+    const sheet1 = workbook.addWorksheet("Detailed Expenses");
+    sheet1.columns = [
+      { header: "Date", key: "date", width: 15 },
+      { header: "Description", key: "description", width: 25 },
+      { header: "Category", key: "category", width: 15 },
+      { header: "Income", key: "income", width: 15 },
+      { header: "Expense", key: "expense", width: 15 },
+      { header: "Savings", key: "savings", width: 15 },
+      { header: "Note", key: "note", width: 40 },
+    ];
+    rows.forEach((row) => {
       sheet1.addRow({
-        description: "TOTAL",
-        income: totalIncome,
-        expense: totalExpense,
-        savings: totalIncome - totalExpense,
+        date: new Date(row.date).toLocaleDateString(),
+        description: row.description,
+        category: row.category,
+        income: row.type === "income" ? Number(row.amount) : null,
+        expense: row.type === "expense" ? Number(row.amount) : null,
+        savings: null,
+        note: row.note || "",
       });
+    });
+    const totalIncome = rows.filter(r => r.type === "income").reduce((a, r) => a + Number(r.amount), 0);
+    const totalExpense = rows.filter(r => r.type === "expense").reduce((a, r) => a + Number(r.amount), 0);
+    sheet1.addRow({});
+    sheet1.addRow({
+      description: "TOTAL",
+      income: totalIncome,
+      expense: totalExpense,
+      savings: totalIncome - totalExpense,
+    });
 
-      // --- Sheet 2: Yearly Summary ---
-      const sheet2 = workbook.addWorksheet("Yearly Summary");
-      sheet2.columns = [
-        { header: "Month", key: "month", width: 20 },
-        { header: "Income", key: "income", width: 15 },
-        { header: "Expense", key: "expense", width: 15 },
-        { header: "Savings", key: "savings", width: 15 },
-      ];
-
-      yearly.forEach((row) => {
-        sheet2.addRow({
-          month: row.month,
-          income: Number(row.income),
-          expense: Number(row.expense),
-          savings: Number(row.income) - Number(row.expense),
-        });
-      });
-
-      const yearlyIncome = yearly.reduce((acc, r) => acc + Number(r.income), 0);
-      const yearlyExpense = yearly.reduce((acc, r) => acc + Number(r.expense), 0);
-
-      sheet2.addRow({});
+    // --- Sheet 2: Yearly Summary ---
+    const sheet2 = workbook.addWorksheet("Yearly Summary");
+    sheet2.columns = [
+      { header: "Month", key: "month", width: 20 },
+      { header: "Income", key: "income", width: 15 },
+      { header: "Expense", key: "expense", width: 15 },
+      { header: "Savings", key: "savings", width: 15 },
+    ];
+    yearly.forEach((row) => {
       sheet2.addRow({
-        month: "TOTAL",
-        income: yearlyIncome,
-        expense: yearlyExpense,
-        savings: yearlyIncome - yearlyExpense,
+        month: row.month,
+        income: Number(row.income),
+        expense: Number(row.expense),
+        savings: Number(row.income) - Number(row.expense),
       });
+    });
+    const yearlyIncome = yearly.reduce((a, r) => a + Number(r.income), 0);
+    const yearlyExpense = yearly.reduce((a, r) => a + Number(r.expense), 0);
+    sheet2.addRow({});
+    sheet2.addRow({
+      month: "TOTAL",
+      income: yearlyIncome,
+      expense: yearlyExpense,
+      savings: yearlyIncome - yearlyExpense,
+    });
 
-      // --- Sheet 3: Yearly Notes ---
-      const sheet3 = workbook.addWorksheet("Yearly Notes");
-      sheet3.columns = [
-        { header: "Date", key: "date", width: 20 },
-        { header: "Note", key: "note", width: 50 },
-      ];
-
-      if (notes.length > 0) {
-        notes.forEach((row) => {
-          sheet3.addRow({
-            date: new Date(row.date).toLocaleDateString(),
-            note: row.note,
-          });
-        });
-      } else {
+    // --- Sheet 3: Notes ---
+    const sheet3 = workbook.addWorksheet("Yearly Notes");
+    sheet3.columns = [
+      { header: "Date", key: "date", width: 20 },
+      { header: "Note", key: "note", width: 50 },
+    ];
+    if (notes.length > 0) {
+      notes.forEach((row) => {
         sheet3.addRow({
-          date: "—",
-          note: "No notes found",
+          date: new Date(row.date).toLocaleDateString(),
+          note: row.note,
         });
-      }
-
-      console.log("✅ All sheets filled");
-    } catch (err) {
-      console.error("❌ Error building Excel workbook:", err);
-      return res.status(500).json({ error: "Workbook creation failed" });
+      });
+    } else {
+      sheet3.addRow({ date: "—", note: "No notes found" });
     }
+
+    console.log("✅ All sheets filled");
 
     // === Generate buffer ===
-    let buffer;
-    try {
-      buffer = await workbook.xlsx.writeBuffer();
-      console.log("✅ Excel buffer generated, size:", buffer.byteLength);
+    const buffer = await workbook.xlsx.writeBuffer();
+    console.log("✅ Excel buffer generated, size:", buffer.byteLength);
 
-      // Save locally for debugging
-      const debugPath = path.join(__dirname, "debug-report.xlsx");
-      fs.writeFileSync(debugPath, buffer);
-      console.log("💾 Debug Excel saved at:", debugPath);
-    } catch (err) {
-      console.error("❌ Error generating Excel buffer:", err);
-      return res.status(500).json({ error: "Buffer generation failed" });
-    }
+    // === Upload to S3 ===
+    const fileKey = `reports/user-${userId}-${Date.now()}.xlsx`;
+    const url = await uploadToS3(
+      buffer,
+      fileKey,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
-    // === Send Response ===
-    try {
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=report-${period || "full"}.xlsx`
-      );
+    // === Save history (bonus) ===
+    await db.promise().query(
+      "INSERT INTO export_history (user_id, s3_key, url) VALUES (?, ?, ?)",
+      [userId, fileKey, url]
+    );
 
-      res.send(buffer);
-      console.log("📤 Excel file sent successfully.");
-    } catch (err) {
-      console.error("❌ Error sending Excel file:", err);
-      res.status(500).json({ error: "Failed to send Excel file" });
-    }
+    // === Respond with URL ===
+    res.json({ fileUrl: url });
+    console.log("📤 Report uploaded to S3 and URL sent:", url);
+
   } catch (err) {
     console.error("❌ Unexpected error in downloadReport:", err);
     res.status(500).json({ error: "Unexpected error" });
   }
 };
+// ==========================
+// Get Export History
+// ==========================
+const getExportHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
+    const [rows] = await db.promise().query(
+      "SELECT id, s3_key, url, created_at FROM export_history WHERE user_id = ? ORDER BY created_at DESC",
+      [userId]
+    );
 
-
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error fetching export history:", err);
+    res.status(500).json({ error: "Failed to fetch export history" });
+  }
+};
 
 
 
@@ -473,5 +437,5 @@ module.exports = {
   updatePremiumExpense, 
   deletePremiumExpense,
   getLeaderboard,
-  getReport,downloadReport
+  getReport,downloadReport,getExportHistory
 };
