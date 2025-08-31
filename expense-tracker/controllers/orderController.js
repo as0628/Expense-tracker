@@ -1,6 +1,6 @@
 // controllers/orderController.js
 const db = require("../config/db.js");
-const { createOrder, getPaymentStatus, BASE_URL } = require("../services/cashfreeService.js");
+const { createOrder, getPaymentStatus } = require("../services/cashfreeService.js");
 
 // ==============================
 // Create new payment order
@@ -16,7 +16,8 @@ const createPaymentOrder = async (req, res) => {
       orderId,
       amount,
       userId,
-      "9999999999" // dummy phone number, you can replace with user's phone if available
+      "9999999999",
+      
     );
 
     // 2. Save order in DB
@@ -32,19 +33,18 @@ const createPaymentOrder = async (req, res) => {
       message: "Order created successfully",
       payment_session_id: order.payment_session_id,
       orderId,
-      payment_url: order.payment_link, // Cashfree returns a payment link if needed
     });
   } catch (err) {
-    console.error("Error creating order (controller):", {
-      message: err.message,
-      response: err.response?.data,
-      status: err.response?.status,
-      headers: err.response?.headers,
-      stack: err.stack
-    });
-    return res.status(500).json({ success: false, error: "Error creating order" });
-  }
-};
+  console.error("Error creating order (controller):", {
+    message: err.message,
+    response: err.response?.data,
+    status: err.response?.status,
+    headers: err.response?.headers,
+    stack: err.stack
+  });
+  return res.status(500).json({ success: false, error: "Error creating order" });
+}
+}
 
 // ==============================
 // Verify payment status
@@ -89,8 +89,12 @@ const getPaymentStatusById = async (req, res) => {
       return res.status(404).send("Order not found");
     }
 
-    // Return a redirect link to frontend with token handled in localStorage
-    res.redirect(`${BASE_URL}/payment-status.html?order_id=${orderId}`);
+    // show simple HTML page (since Cashfree redirects user here)
+    res.send(`
+      <h1>Payment Status</h1>
+      <p>Order ID: ${orderId}</p>
+      <p>Status: ${rows[0].status}</p>
+    `);
   } catch (err) {
     console.error("Error fetching order status:", err.message);
     res.status(500).send("Error fetching order status");

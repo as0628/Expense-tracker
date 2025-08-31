@@ -5,53 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Status</title>
   <link rel="stylesheet" href="payment.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #f4f6f9;
-    }
-    h2 { margin-bottom: 20px; }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover { background-color: #45a049; }
-  </style>
 </head>
 <body>
   <h2 id="status">Checking payment status...</h2>
-  <button id="ok-btn" style="display:none;">OK</button>
+  <button id="ok-btn">OK</button>
 
   <script>
     (async () => {
-      const BASE_URL = window.location.origin; // local or AWS
       const params = new URLSearchParams(window.location.search);
-      const orderId = params.get("order_id");
+      const orderId = params.get("order_id");  // Cashfree adds ?order_id=xxxx
       const token = localStorage.getItem("token");
 
-      const statusEl = document.getElementById("status");
-      const okBtn = document.getElementById("ok-btn");
-
-      // Invalid request handling
       if (!orderId || !token) {
-        statusEl.innerText = "Invalid request!";
-        okBtn.style.display = "inline-block";
-        okBtn.onclick = () => window.location.href = `${BASE_URL}/login.html`;
+        document.getElementById("status").innerText = "Invalid request!";
         return;
       }
 
       try {
-        const res = await fetch(`${BASE_URL}/api/order/status`, {
+        const res = await fetch("http://localhost:3000/api/order/status", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -63,21 +34,26 @@
         const data = await res.json();
         console.log("Verification response:", data);
 
+        const statusEl = document.getElementById("status");
+        const okBtn = document.getElementById("ok-btn");
+
         if (data.success) {
           statusEl.innerText = "✅ Payment successful! Premium activated.";
-          okBtn.onclick = () => window.location.href = `${BASE_URL}/login.html`;
+          okBtn.onclick = () => {
+            window.location.href = "login.html";
+          };
         } else {
           statusEl.innerText = "⚠️ Payment failed or pending.";
-          okBtn.onclick = () => window.location.href = `${BASE_URL}/expense.html`;
+          okBtn.onclick = () => {
+            window.location.href = "expense.html";
+          };
         }
 
+        // ✅ Show button in both cases
         okBtn.style.display = "inline-block";
-
       } catch (err) {
         console.error("Verification error:", err);
-        statusEl.innerText = "Error verifying payment.";
-        okBtn.style.display = "inline-block";
-        okBtn.onclick = () => window.location.href = `${BASE_URL}/expense.html`;
+        document.getElementById("status").innerText = "Error verifying payment.";
       }
     })();
   </script>
