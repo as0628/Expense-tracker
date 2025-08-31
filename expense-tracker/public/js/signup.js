@@ -1,3 +1,7 @@
+const BASE_URL = window.location.hostname.includes("localhost")
+  ? "http://localhost:3000/api"
+  : "http://3.110.204.39:3000/api";
+
 document.getElementById('auth-form').addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -10,7 +14,7 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
   console.log("Form submission payload:", payload);
 
   try {
-    const res = await fetch('http://localhost:3000/api/auth/signup', {   // ✅ Correct endpoint
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -19,9 +23,9 @@ document.getElementById('auth-form').addEventListener('submit', async e => {
     const data = await res.json();
     if (res.ok) {
       console.log('Success response:', data);
-    //  alert('Signup successful!');
-      // You could redirect here if needed
-       window.location.href = 'login.html';
+      // alert('Signup successful!');
+      // Redirect to login page
+      window.location.href = 'login.html';
     } else {
       console.error('Server error:', data);
       alert(data.error || 'Something went wrong');
