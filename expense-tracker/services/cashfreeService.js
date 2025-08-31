@@ -1,9 +1,5 @@
-// services/cashfreeService.js
-const axios = require("axios");
+const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3000";
 
-// ==============================
-// Function to create order
-// ==============================
 const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
   try {
     const response = await axios.post(
@@ -13,12 +9,12 @@ const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
         order_amount: orderAmount,
         order_currency: "INR",
         customer_details: {
-          customer_id: String(userId),   // 👈 force it to string
+          customer_id: String(userId),
           customer_phone: String(customerPhone),
           customer_email: "test@gmail.com",
         },
         order_meta: {
-          return_url: `http://127.0.0.1:5500/expense-tracker/public/payment-status.html?order_id=${orderId}`,
+          return_url: `${BASE_URL}/payment-status.html?order_id=${orderId}`, // ✅ updated
         },
       },
       {
@@ -37,38 +33,4 @@ const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
     console.error("Error creating order:", error.response?.data || error.message);
     throw error;
   }
-};
-
-
-// ==============================
-// Function to check payment status
-// ==============================
-const getPaymentStatus = async (orderId) => {
-  try {
-    const response = await axios.get(
-      `https://sandbox.cashfree.com/pg/orders/${orderId}/payments`,
-      {
-        headers: {
-          accept: "application/json",
-          "x-client-id": process.env.CASHFREE_APP_ID,
-          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
-          "x-api-version": "2022-09-01",
-        },
-      }
-    );
-
-    return response.data; // ✅ array of payments
-  } catch (error) {
-    console.error(
-      "Error fetching payment status:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
-
-// Export functions in CommonJS
-module.exports = {
-  createOrder,
-  getPaymentStatus,
 };
