@@ -27,12 +27,12 @@
     if (data.success) {
       statusEl.innerText = "✅ Payment successful! Premium activated.";
       okBtn.onclick = () => {
-        window.location.href = "login.html";
+        window.location.href = "/login.html";
       };
     } else {
       statusEl.innerText = "⚠️ Payment failed or pending.";
       okBtn.onclick = () => {
-        window.location.href = "expense.html";
+        window.location.href = "/expense.html";
       };
     }
 
