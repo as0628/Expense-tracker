@@ -1,6 +1,7 @@
 (async () => {
+  const BASE_URL = window.location.origin; // http://127.0.0.1:3000 locally or http://3.110.204.39:3000 on AWS
   const params = new URLSearchParams(window.location.search);
-  const orderId = params.get("order_id");  // Cashfree adds ?order_id=xxxx
+  const orderId = params.get("order_id");  
   const token = localStorage.getItem("token");
 
   if (!orderId || !token) {
@@ -9,7 +10,7 @@
   }
 
   try {
-    const res = await fetch("http://localhost:3000/api/order/status", {
+    const res = await fetch(`${BASE_URL}/api/order/status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,16 +28,15 @@
     if (data.success) {
       statusEl.innerText = "✅ Payment successful! Premium activated.";
       okBtn.onclick = () => {
-        window.location.href = "login.html";
+        window.location.href = `${BASE_URL}/login.html`;
       };
     } else {
       statusEl.innerText = "⚠️ Payment failed or pending.";
       okBtn.onclick = () => {
-        window.location.href = "expense.html";
+        window.location.href = `${BASE_URL}/expense.html`;
       };
     }
 
-    // ✅ Show button in both cases
     okBtn.style.display = "inline-block";
   } catch (err) {
     console.error("Verification error:", err);
