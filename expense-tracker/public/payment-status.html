@@ -11,16 +11,21 @@
   <button id="ok-btn" style="display:none;">OK</button>
 
   <script>
-    // Automatically detect the current host
-    const BASE_URL = window.location.origin; // will be http://127.0.0.1:3000 locally or http://3.110.204.39:3000 on AWS
-
     (async () => {
+      // Detect current host dynamically
+      const BASE_URL = window.location.origin; // works locally or on AWS
+
       const params = new URLSearchParams(window.location.search);
       const orderId = params.get("order_id");
       const token = localStorage.getItem("token");
 
+      const statusEl = document.getElementById("status");
+      const okBtn = document.getElementById("ok-btn");
+
       if (!orderId || !token) {
-        document.getElementById("status").innerText = "Invalid request!";
+        statusEl.innerText = "Invalid request!";
+        okBtn.style.display = "inline-block";
+        okBtn.onclick = () => window.location.href = `${BASE_URL}/login.html`;
         return;
       }
 
@@ -37,25 +42,27 @@
         const data = await res.json();
         console.log("Verification response:", data);
 
-        const statusEl = document.getElementById("status");
-        const okBtn = document.getElementById("ok-btn");
-
         if (data.success) {
           statusEl.innerText = "✅ Payment successful! Premium activated.";
           okBtn.onclick = () => {
+            // Redirect to login page after successful payment
             window.location.href = `${BASE_URL}/login.html`;
           };
         } else {
           statusEl.innerText = "⚠️ Payment failed or pending.";
           okBtn.onclick = () => {
+            // Redirect to main expense page if payment failed
             window.location.href = `${BASE_URL}/expense.html`;
           };
         }
 
         okBtn.style.display = "inline-block";
+
       } catch (err) {
         console.error("Verification error:", err);
-        document.getElementById("status").innerText = "Error verifying payment.";
+        statusEl.innerText = "Error verifying payment.";
+        okBtn.style.display = "inline-block";
+        okBtn.onclick = () => window.location.href = `${BASE_URL}/expense.html`;
       }
     })();
   </script>
