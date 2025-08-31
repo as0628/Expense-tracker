@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "signup.html"));
+  res.sendFile(path.join(__dirname, "public","html",  "signup.html"));
 });
 
 // ✅ Morgan Logger → save logs in "access.log"
