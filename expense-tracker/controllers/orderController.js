@@ -1,41 +1,38 @@
 // controllers/orderController.js
 const db = require("../config/db.js");
-const { createOrder, getPaymentStatus } = require("../services/cashfreeService.js");
+const { createOrder, getPaymentStatus, BASE_URL } = require("../services/cashfreeService.js");
 
 // ==============================
 // Create new payment order
 // ==============================
 const createPaymentOrder = async (req, res) => {
   try {
-    const userId = req.user.id; // from JWT middleware
+    const userId = req.user.id; // ✅ from JWT middleware
     const orderId = "order_" + Date.now();
     const amount = 499; // fixed premium price
-    const token = req.headers.authorization?.split(" ")[1]; // JWT from frontend
-
-    if (!token) {
-      return res.status(403).json({ success: false, error: "Token missing" });
-    }
 
     // 1. Create order on Cashfree
     const order = await createOrder(
       orderId,
       amount,
       userId,
-      "9999999999",
-      token // pass token so return_url has it
+      "9999999999" // dummy phone number, you can replace with user's phone if available
     );
 
     // 2. Save order in DB
-    await db.promise().query(
-      "INSERT INTO orders (orderId, amount, status, userId) VALUES (?, ?, ?, ?)",
-      [orderId, amount, "PENDING", userId]
-    );
+    await db
+      .promise()
+      .query(
+        "INSERT INTO orders (orderId, amount, status, userId) VALUES (?, ?, ?, ?)",
+        [orderId, amount, "PENDING", userId]
+      );
 
     return res.json({
       success: true,
       message: "Order created successfully",
       payment_session_id: order.payment_session_id,
       orderId,
+      payment_url: order.payment_link, // Cashfree returns a payment link if needed
     });
   } catch (err) {
     console.error("Error creating order (controller):", {
@@ -43,7 +40,7 @@ const createPaymentOrder = async (req, res) => {
       response: err.response?.data,
       status: err.response?.status,
       headers: err.response?.headers,
-      stack: err.stack,
+      stack: err.stack
     });
     return res.status(500).json({ success: false, error: "Error creating order" });
   }
@@ -61,7 +58,7 @@ const verifyPayment = async (req, res) => {
     const payment = await getPaymentStatus(orderId);
 
     if (payment[0]?.payment_status === "SUCCESS") {
-      // Mark order + upgrade user
+      // ✅ Mark order + upgrade user
       await db.promise().query("UPDATE orders SET status = 'SUCCESS' WHERE orderId = ?", [orderId]);
       await db.promise().query("UPDATE signup SET isPremium = 1 WHERE id = ?", [userId]);
 
@@ -70,7 +67,7 @@ const verifyPayment = async (req, res) => {
         message: "Payment successful, premium activated",
       });
     } else {
-      // Payment failed
+      // ❌ Payment failed
       await db.promise().query("UPDATE orders SET status = 'FAILED' WHERE orderId = ?", [orderId]);
       return res.json({ success: false, message: "Payment failed or pending" });
     }
@@ -92,19 +89,15 @@ const getPaymentStatusById = async (req, res) => {
       return res.status(404).send("Order not found");
     }
 
-    // show simple HTML page (Cashfree redirects user here)
-    res.send(`
-      <h1>Payment Status</h1>
-      <p>Order ID: ${orderId}</p>
-      <p>Status: ${rows[0].status}</p>
-    `);
+    // Return a redirect link to frontend with token handled in localStorage
+    res.redirect(`${BASE_URL}/payment-status.html?order_id=${orderId}`);
   } catch (err) {
     console.error("Error fetching order status:", err.message);
     res.status(500).send("Error fetching order status");
   }
 };
 
-// Export all functions
+// ✅ Export functions in CommonJS style
 module.exports = {
   createPaymentOrder,
   verifyPayment,

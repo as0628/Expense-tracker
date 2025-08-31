@@ -10,7 +10,7 @@ const BASE_URL = process.env.BASE_URL || "http://3.110.204.39:3000";
  * @param {number} orderAmount - Amount in INR
  * @param {string|number} userId - User ID
  * @param {string|number} customerPhone - Customer phone number
- * @param {string} customerEmail - Customer email
+ * @param {string} customerEmail - Customer email (default: test@gmail.com)
  * @returns {Promise<object>} - Cashfree order response
  */
 const createOrder = async (orderId, orderAmount, userId, customerPhone, customerEmail = "test@gmail.com") => {
@@ -27,8 +27,8 @@ const createOrder = async (orderId, orderAmount, userId, customerPhone, customer
           customer_email: customerEmail,
         },
         order_meta: {
-  return_url: `${BASE_URL}/payment-status.html?order_id=${orderId}&token=${userToken}`,
-},
+          return_url: `${BASE_URL}/payment-status.html?order_id=${orderId}`, // ✅ simplified
+        },
       },
       {
         headers: {
@@ -78,5 +78,5 @@ const getPaymentStatus = async (orderId) => {
 module.exports = {
   createOrder,
   getPaymentStatus,
-  BASE_URL, // export BASE_URL for frontend redirects
+  BASE_URL,
 };

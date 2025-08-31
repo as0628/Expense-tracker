@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Status</title>
   <link rel="stylesheet" href="payment.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f4f6f9;
+    }
+    h2 { margin-bottom: 20px; }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background-color: #45a049; }
+  </style>
 </head>
 <body>
   <h2 id="status">Checking payment status...</h2>
@@ -12,9 +34,7 @@
 
   <script>
     (async () => {
-      // Detect current host dynamically
-      const BASE_URL = window.location.origin; // works locally or on AWS
-
+      const BASE_URL = window.location.origin; // local or AWS
       const params = new URLSearchParams(window.location.search);
       const orderId = params.get("order_id");
       const token = localStorage.getItem("token");
@@ -22,6 +42,7 @@
       const statusEl = document.getElementById("status");
       const okBtn = document.getElementById("ok-btn");
 
+      // Invalid request handling
       if (!orderId || !token) {
         statusEl.innerText = "Invalid request!";
         okBtn.style.display = "inline-block";
@@ -44,16 +65,10 @@
 
         if (data.success) {
           statusEl.innerText = "✅ Payment successful! Premium activated.";
-          okBtn.onclick = () => {
-            // Redirect to login page after successful payment
-            window.location.href = `${BASE_URL}/login.html`;
-          };
+          okBtn.onclick = () => window.location.href = `${BASE_URL}/login.html`;
         } else {
           statusEl.innerText = "⚠️ Payment failed or pending.";
-          okBtn.onclick = () => {
-            // Redirect to main expense page if payment failed
-            window.location.href = `${BASE_URL}/expense.html`;
-          };
+          okBtn.onclick = () => window.location.href = `${BASE_URL}/expense.html`;
         }
 
         okBtn.style.display = "inline-block";
