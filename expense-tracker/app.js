@@ -26,15 +26,6 @@ const accessLogStream = fs.createWriteStream(
 );
 app.use(morgan("combined", { stream: accessLogStream }));
 
-// ===== Serve Frontend =====
-// Assuming your HTML files are in: project_root/public/html/
-app.use(express.static(path.join(__dirname, "public")));
-
-// Default route → load signup.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "html", "signup.html"));
-});
-
 // ===== Routes =====
 app.use("/api/auth", signupRoutes);
 app.use("/api/expenses", expenseRoutes);

@@ -1,12 +1,7 @@
-// ===== Base URL Switcher =====
-const BASE_URL = window.location.hostname.includes("localhost")
-  ? "http://localhost:3000/api"
-  : "http://3.110.204.39:3000/api";
-
 // ===== JWT check =====
 const token = localStorage.getItem("token");
 if (!token) {
-  // alert("You must log in first!");
+//  alert("You must log in first!");
   window.location.href = "login.html";
 }
 
@@ -18,7 +13,7 @@ async function loadExpenses(page = 1) {
     const pageSize = localStorage.getItem("pageSize") || 10;
 
     const res = await fetch(
-      `${BASE_URL}/premiumexpenses?page=${page}&limit=${pageSize}`,
+      `http://localhost:3000/api/premiumexpenses?page=${page}&limit=${pageSize}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -92,7 +87,7 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
   const note = document.getElementById("note").value.trim();
 
   try {
-    const res = await fetch(`${BASE_URL}/premiumexpenses`, {
+    const res = await fetch("http://localhost:3000/api/premiumexpenses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -119,7 +114,7 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
   try {
-    const res = await fetch(`${BASE_URL}/premiumexpenses/${id}`, {
+    const res = await fetch(`http://localhost:3000/api/premiumexpenses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -144,20 +139,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const downloadBtn = document.getElementById("download-btn");
   const pageSizeSelect = document.getElementById("pageSizeSelect");
   const historyBtn = document.getElementById("toggle-history-btn");
-  const historySection = document.getElementById("history-section");
+const historySection = document.getElementById("history-section");
 
-  historyBtn.addEventListener("click", async () => {
-    const isHidden = historySection.classList.contains("hidden");
+historyBtn.addEventListener("click", async () => {
+  const isHidden = historySection.classList.contains("hidden");
 
-    if (isHidden) {
-      await loadExportHistory(); // load only when showing
-      historySection.classList.remove("hidden");
-      historyBtn.textContent = "Hide History";
-    } else {
-      historySection.classList.add("hidden");
-      historyBtn.textContent = "Show History";
-    }
-  });
+  if (isHidden) {
+    await loadExportHistory(); // load only when showing
+    historySection.classList.remove("hidden");
+    historyBtn.textContent = "Hide History";
+  } else {
+    historySection.classList.add("hidden");
+    historyBtn.textContent = "Show History";
+  }
+});
+
 
   // --- Leaderboard toggle ---
   leaderboardBtn.addEventListener("click", async () => {
@@ -165,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isHidden) {
       try {
         const res = await fetch(
-          `${BASE_URL}/premiumexpenses/leaderboard`,
+          "http://localhost:3000/api/premiumexpenses/leaderboard",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
@@ -187,6 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
         leaderboardBtn.textContent = "Hide Leaderboard";
       } catch (err) {
         console.error("Error loading leaderboard:", err);
+        //alert("Failed to load leaderboard");
       }
     } else {
       leaderboardSection.classList.add("hidden");
@@ -198,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.loadReport = async (period) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/premiumexpenses/report?period=${period}`,
+        `http://localhost:3000/api/premiumexpenses/report?period=${period}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -225,65 +222,67 @@ document.addEventListener("DOMContentLoaded", () => {
       downloadBtn.dataset.period = period;
     } catch (err) {
       console.error("Error loading report:", err);
+     // alert("Failed to load report.");
     }
   };
 
-  // --- Download (via S3 URL) ---
-  downloadBtn.addEventListener("click", async () => {
-    const period = downloadBtn.dataset.period || "monthly";
-    try {
-      const res = await fetch(
-        `${BASE_URL}/premiumexpenses/download?period=${period}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Download failed");
+  // --- Download ---
+// --- Download (via S3 URL) ---
+downloadBtn.addEventListener("click", async () => {
+  const period = downloadBtn.dataset.period || "monthly";
+  try {
+    const res = await fetch(
+      `http://localhost:3000/api/premiumexpenses/download?period=${period}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) throw new Error("Download failed");
 
-      const data = await res.json();
-      if (!data.fileUrl) throw new Error("No file URL returned");
+    const data = await res.json();
+    if (!data.fileUrl) throw new Error("No file URL returned");
 
-      // ✅ Open in new tab (or auto-download)
-      window.open(data.fileUrl, "_blank");
+    // ✅ Open in new tab (or auto-download)
+    window.open(data.fileUrl, "_blank");
 
-      console.log("📤 Report ready at:", data.fileUrl);
-    } catch (err) {
-      console.error("Error downloading:", err);
-      alert("Download failed.");
-    }
-  });
-
-  // ====== Load Export History ======
-  async function loadExportHistory() {
-    try {
-      const res = await fetch(`${BASE_URL}/premiumexpenses/history`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-
-      const tbody = document.getElementById("history-body");
-      tbody.innerHTML = "";
-
-      if (!Array.isArray(data) || data.length === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="3">No reports generated yet.</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-
-      data.forEach((file, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${idx + 1}</td>
-          <td>${new Date(file.created_at).toLocaleString()}</td>
-          <td><a href="${file.url}" target="_blank">⬇ Download</a></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    } catch (err) {
-      console.error("Error loading history:", err);
-    }
+    console.log("📤 Report ready at:", data.fileUrl);
+  } catch (err) {
+    console.error("Error downloading:", err);
+    alert("Download failed.");
   }
+});
+// ====== Load Export History ======
+async function loadExportHistory() {
+  try {
+    const res = await fetch("http://localhost:3000/api/premiumexpenses/history", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
 
-  window.loadExportHistory = loadExportHistory;
+    const tbody = document.getElementById("history-body");
+    tbody.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="3">No reports generated yet.</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
+
+    data.forEach((file, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${new Date(file.created_at).toLocaleString()}</td>
+        <td><a href="${file.url}" target="_blank">⬇ Download</a></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Error loading history:", err);
+  }
+}
+
+
+window.loadExportHistory = loadExportHistory;
 
   // --- Page size dropdown ---
   const savedSize = localStorage.getItem("pageSize") || 10;

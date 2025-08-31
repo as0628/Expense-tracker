@@ -1,8 +1,3 @@
-// ✅ Step 0: Dynamic Base URL
-const BASE_URL = window.location.hostname.includes("localhost") 
-  ? "http://localhost:3000/api" 
-  : "http://3.110.204.39:3000/api";
-
 // ✅ Step 1: Get token first
 const token = localStorage.getItem("token");
 const pageSize = 10;
@@ -22,7 +17,7 @@ function renderRows(expenses) {
       <td>${exp.amount}</td>
       <td>${exp.description}</td>
       <td>${exp.category}</td>
-      <td>${exp.note || ""}</td>
+      <td>${exp.note || ""}</td>  <!-- ✅ Show Note -->
       <td><button onclick="deleteExpense(${exp.id})">Delete</button></td>
     `;
     tableBody.appendChild(row);
@@ -62,7 +57,7 @@ function gotoPage(page, expenses) {
 
 async function loadExpensesWithPagination() {
   try {
-    const res = await fetch(`${BASE_URL}/expenses`, {
+    const res = await fetch("http://localhost:3000/api/expenses", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     const expenses = await res.json();
@@ -75,23 +70,26 @@ async function loadExpensesWithPagination() {
 document.addEventListener('DOMContentLoaded', loadExpensesWithPagination);
 
 if (!token) {
+//  alert("You must log in first!");
   window.location.href = "login.html";
 } else {
+  // Show page if logged in
   document.getElementById("expense-container").style.display = "block";
 }
 
 // =========================
-// Premium Purchase
+// Premium Purchase (updated)
 // =========================
 document.getElementById("buy-premium-btn").addEventListener("click", async () => {
   try {
+    const token = localStorage.getItem("token");
     if (!token) {
       alert("You must log in first!");
       window.location.href = "login.html";
       return;
     }
 
-    const res = await fetch(`${BASE_URL}/order/order`, {
+    const res = await fetch("http://localhost:3000/api/order/order", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -107,7 +105,7 @@ document.getElementById("buy-premium-btn").addEventListener("click", async () =>
       return;
     }
 
-    // Redirect to Cashfree page with session
+    // 👉 Redirect to Cashfree page with session
     const qs = new URLSearchParams({
       orderId: data.orderId,
       sessionId: data.payment_session_id
@@ -125,14 +123,14 @@ document.getElementById("buy-premium-btn").addEventListener("click", async () =>
 // =========================
 async function loadExpenses() {
   try {
-    const res = await fetch(`${BASE_URL}/expenses`, {
+    const res = await fetch("http://localhost:3000/api/expenses", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = await res.json();
 
     const expenseBody = document.getElementById("expense-body");
-    expenseBody.innerHTML = "";
+    expenseBody.innerHTML = ""; // clear old data
 
     data.forEach((exp) => {
       const row = document.createElement("tr");
@@ -140,7 +138,7 @@ async function loadExpenses() {
         <td>${exp.amount}</td>
         <td>${exp.description}</td>
         <td>${exp.category}</td>
-        <td>${exp.note || ""}</td>
+        <td>${exp.note || ""}</td>   <!-- ✅ Show Note -->
         <td>
           <button onclick="deleteExpense(${exp.id})">Delete</button>
         </td>
@@ -153,29 +151,27 @@ async function loadExpenses() {
 }
 
 // =========================
-// Add Expense
-// =========================
 document.getElementById("expense-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const amount = document.getElementById("amount").value.trim();
   const description = document.getElementById("description").value.trim();
   const category = document.getElementById("category").value;
-  const note = document.getElementById("note").value.trim();
+  const note = document.getElementById("note").value.trim();   // ✅ Added Note
 
   try {
-    const res = await fetch(`${BASE_URL}/expenses`, {
+    const res = await fetch("http://localhost:3000/api/expenses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ amount, description, category, note }),
+      body: JSON.stringify({ amount, description, category, note }),  // ✅ Send Note
     });
 
     const data = await res.json();
     if (res.ok) {
-      loadExpenses();
+      loadExpenses(); // refresh list
       document.getElementById("expense-form").reset();
     } else {
       alert(data.error || "Failed to add expense");
@@ -186,13 +182,11 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
 });
 
 // =========================
-// Delete Expense
-// =========================
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
 
   try {
-    const res = await fetch(`${BASE_URL}/expenses/${id}`, {
+    const res = await fetch(`http://localhost:3000/api/expenses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
