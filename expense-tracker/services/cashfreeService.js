@@ -2,7 +2,7 @@
 const axios = require("axios");
 
 // Base URL for redirects (local or AWS)
-const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3000";
+const BASE_URL = process.env.BASE_URL || "http://3.110.204.39:3000";
 
 /**
  * Create a new payment order on Cashfree
