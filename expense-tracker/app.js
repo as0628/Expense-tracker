@@ -19,17 +19,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== Serve static files =====
-// Serve CSS and JS from public/css and public/js
-app.use("/css", express.static(path.join(__dirname, "public/css")));
-app.use("/js", express.static(path.join(__dirname, "public/js")));
-
-// Serve HTML files from public/html
-app.use("/html", express.static(path.join(__dirname, "public/html")));
+// ===== Serve all frontend files from public =====
+app.use(express.static(path.join(__dirname, "public")));
 
 // Default route → signup page
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/html/signup.html"));
+  res.sendFile(path.join(__dirname, "public/signup.html"));
 });
 
 // ✅ Morgan Logger → save logs in "access.log"
