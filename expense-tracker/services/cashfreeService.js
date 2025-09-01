@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 // Use environment variable for server URL (AWS or local)
-const BASE_URL = process.env.BASE_URL || "http://3.110.204.39:3000";
+const BASE_URL = process.env.BASE_URL || "http://3.110.204.39";
 
 // Create Cashfree order
 const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
