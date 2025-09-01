@@ -1,23 +1,25 @@
+import API_BASE_URL from "api.js";
+
 // ✅ Step 1: Get token first
 const token = localStorage.getItem("token");
 const pageSize = 10;
 let currentPage = 1;
 
-const tableBody = document.getElementById('expense-body');
-const paginationEl = document.getElementById('pagination');
+const tableBody = document.getElementById("expense-body");
+const paginationEl = document.getElementById("pagination");
 
 function renderRows(expenses) {
-  tableBody.innerHTML = '';
+  tableBody.innerHTML = "";
   const start = (currentPage - 1) * pageSize;
   const pageItems = expenses.slice(start, start + pageSize);
 
-  pageItems.forEach(exp => {
-    const row = document.createElement('tr');
+  pageItems.forEach((exp) => {
+    const row = document.createElement("tr");
     row.innerHTML = `
       <td>${exp.amount}</td>
       <td>${exp.description}</td>
       <td>${exp.category}</td>
-      <td>${exp.note || ""}</td>  <!-- ✅ Show Note -->
+      <td>${exp.note || ""}</td>
       <td><button onclick="deleteExpense(${exp.id})">Delete</button></td>
     `;
     tableBody.appendChild(row);
@@ -25,27 +27,27 @@ function renderRows(expenses) {
 }
 
 function renderPagination(totalItems) {
-  paginationEl.innerHTML = '';
+  paginationEl.innerHTML = "";
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  const prevBtn = document.createElement('button');
-  prevBtn.textContent = 'Prev';
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "Prev";
   prevBtn.disabled = currentPage === 1;
-  prevBtn.addEventListener('click', () => gotoPage(currentPage - 1));
+  prevBtn.addEventListener("click", () => gotoPage(currentPage - 1));
   paginationEl.appendChild(prevBtn);
 
   for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
+    const btn = document.createElement("button");
     btn.textContent = i;
-    if (i === currentPage) btn.classList.add('active');
-    btn.addEventListener('click', () => gotoPage(i));
+    if (i === currentPage) btn.classList.add("active");
+    btn.addEventListener("click", () => gotoPage(i));
     paginationEl.appendChild(btn);
   }
 
-  const nextBtn = document.createElement('button');
-  nextBtn.textContent = 'Next';
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "Next";
   nextBtn.disabled = currentPage === totalPages;
-  nextBtn.addEventListener('click', () => gotoPage(currentPage + 1));
+  nextBtn.addEventListener("click", () => gotoPage(currentPage + 1));
   paginationEl.appendChild(nextBtn);
 }
 
@@ -57,7 +59,7 @@ function gotoPage(page, expenses) {
 
 async function loadExpensesWithPagination() {
   try {
-    const res = await fetch("http://localhost:3000/api/expenses", {
+    const res = await fetch(`${API_BASE_URL}/api/expenses`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     const expenses = await res.json();
@@ -67,70 +69,69 @@ async function loadExpensesWithPagination() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadExpensesWithPagination);
+document.addEventListener("DOMContentLoaded", loadExpensesWithPagination);
 
 if (!token) {
-//  alert("You must log in first!");
   window.location.href = "login.html";
 } else {
-  // Show page if logged in
   document.getElementById("expense-container").style.display = "block";
 }
 
 // =========================
 // Premium Purchase (updated)
 // =========================
-document.getElementById("buy-premium-btn").addEventListener("click", async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("You must log in first!");
-      window.location.href = "login.html";
-      return;
-    }
-
-    const res = await fetch("http://localhost:3000/api/order/order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+document
+  .getElementById("buy-premium-btn")
+  .addEventListener("click", async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must log in first!");
+        window.location.href = "login.html";
+        return;
       }
-    });
 
-    const data = await res.json();
-    console.log("Order response:", data);
+      const res = await fetch(`${API_BASE_URL}/api/order/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (!res.ok || !data.success) {
-      alert(data.error || "Failed to create order.");
-      return;
+      const data = await res.json();
+      console.log("Order response:", data);
+
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to create order.");
+        return;
+      }
+
+      const qs = new URLSearchParams({
+        orderId: data.orderId,
+        sessionId: data.payment_session_id,
+      }).toString();
+
+      window.location.href = `cashfree.html?${qs}`;
+    } catch (err) {
+      console.error("Error creating order:", err);
+      alert("Something went wrong while creating order");
     }
-
-    // 👉 Redirect to Cashfree page with session
-    const qs = new URLSearchParams({
-      orderId: data.orderId,
-      sessionId: data.payment_session_id
-    }).toString();
-
-    window.location.href = `cashfree.html?${qs}`;
-  } catch (err) {
-    console.error("Error creating order:", err);
-    alert("Something went wrong while creating order");
-  }
-});
+  });
 
 // =========================
 // Load Expenses
 // =========================
 async function loadExpenses() {
   try {
-    const res = await fetch("http://localhost:3000/api/expenses", {
+    const res = await fetch(`${API_BASE_URL}/api/expenses`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = await res.json();
 
     const expenseBody = document.getElementById("expense-body");
-    expenseBody.innerHTML = ""; // clear old data
+    expenseBody.innerHTML = "";
 
     data.forEach((exp) => {
       const row = document.createElement("tr");
@@ -138,7 +139,7 @@ async function loadExpenses() {
         <td>${exp.amount}</td>
         <td>${exp.description}</td>
         <td>${exp.category}</td>
-        <td>${exp.note || ""}</td>   <!-- ✅ Show Note -->
+        <td>${exp.note || ""}</td>
         <td>
           <button onclick="deleteExpense(${exp.id})">Delete</button>
         </td>
@@ -151,42 +152,44 @@ async function loadExpenses() {
 }
 
 // =========================
-document.getElementById("expense-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
+document
+  .getElementById("expense-form")
+  .addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const amount = document.getElementById("amount").value.trim();
-  const description = document.getElementById("description").value.trim();
-  const category = document.getElementById("category").value;
-  const note = document.getElementById("note").value.trim();   // ✅ Added Note
+    const amount = document.getElementById("amount").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const category = document.getElementById("category").value;
+    const note = document.getElementById("note").value.trim();
 
-  try {
-    const res = await fetch("http://localhost:3000/api/expenses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ amount, description, category, note }),  // ✅ Send Note
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/expenses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount, description, category, note }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      loadExpenses(); // refresh list
-      document.getElementById("expense-form").reset();
-    } else {
-      alert(data.error || "Failed to add expense");
+      const data = await res.json();
+      if (res.ok) {
+        loadExpenses();
+        document.getElementById("expense-form").reset();
+      } else {
+        alert(data.error || "Failed to add expense");
+      }
+    } catch (err) {
+      console.error("Error adding expense:", err);
     }
-  } catch (err) {
-    console.error("Error adding expense:", err);
-  }
-});
+  });
 
 // =========================
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
 
   try {
-    const res = await fetch(`http://localhost:3000/api/expenses/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/expenses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

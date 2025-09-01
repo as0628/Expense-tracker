@@ -1,3 +1,5 @@
+import API_BASE_URL from "api.js";
+
 (async () => {
   const params = new URLSearchParams(window.location.search);
   const orderId = params.get("order_id");  // Cashfree adds ?order_id=xxxx
@@ -9,7 +11,7 @@
   }
 
   try {
-    const res = await fetch("http://localhost:3000/api/order/status", {
+    const res = await fetch(`${API_BASE_URL}/api/order/status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
