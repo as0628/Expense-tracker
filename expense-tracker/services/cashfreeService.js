@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const BASE_URL = process.env.BASE_URL || "http://13.126.95.171";
+const BASE_URL = process.env.BASE_URL || "http://3.109.62.226";
 
 
 const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
