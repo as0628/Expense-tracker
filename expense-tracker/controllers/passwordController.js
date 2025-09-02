@@ -1,10 +1,11 @@
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
-const path = require("path");  
+const path = require("path");
 
-const db = require("../config/db"); 
+const db = require("../config/db");
 
+// ===== Forgot Password =====
 const forgotPassword = (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
@@ -20,8 +21,9 @@ const forgotPassword = (req, res) => {
 
     const user = users[0];
     const resetRequestId = uuidv4();
+
     db.query(
-      "INSERT INTO ForgotPasswordRequests (id, userId, isActive) VALUES (?, ?, ?)",
+      "INSERT INTO forgotpasswordrequests (id, userId, isActive) VALUES (?, ?, ?)",
       [resetRequestId, user.id, true],
       (err2) => {
         if (err2) {
@@ -29,7 +31,8 @@ const forgotPassword = (req, res) => {
           return res.status(500).json({ error: "Failed to create reset request" });
         }
 
-        const resetUrl = `http://localhost:3000/password/resetpassword/${resetRequestId}`;
+        // Use FRONTEND_URL from .env (your EC2 public IP or domain)
+        const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
         console.log("Reset URL:", resetUrl);
 
         res.json({ message: "Password reset link created!", resetUrl });
@@ -38,12 +41,12 @@ const forgotPassword = (req, res) => {
   });
 };
 
-
+// ===== Reset Password Form =====
 const resetPasswordForm = (req, res) => {
   const { id } = req.params;
 
   db.query(
-    "SELECT * FROM ForgotPasswordRequests WHERE id = ? AND isActive = TRUE",
+    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
     [id],
     (err, requests) => {
       if (err) {
@@ -54,12 +57,13 @@ const resetPasswordForm = (req, res) => {
         return res.status(400).send("Invalid or expired reset link.");
       }
 
-      
+      // Serve the reset password HTML page
       res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
     }
   );
 };
 
+// ===== Reset Password Submit =====
 const resetPasswordSubmit = (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
@@ -69,7 +73,7 @@ const resetPasswordSubmit = (req, res) => {
   }
 
   db.query(
-    "SELECT * FROM ForgotPasswordRequests WHERE id = ? AND isActive = TRUE",
+    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
     [id],
     async (err, requests) => {
       if (err) {
@@ -83,7 +87,7 @@ const resetPasswordSubmit = (req, res) => {
       try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-       
+        // Update the user's password
         db.query(
           "UPDATE signup SET password = ? WHERE id = ?",
           [hashedPassword, requests[0].userId],
@@ -93,9 +97,9 @@ const resetPasswordSubmit = (req, res) => {
               return res.status(500).json({ success: false, message: "Failed to update password." });
             }
 
-            
+            // Mark the reset request as inactive
             db.query(
-              "UPDATE ForgotPasswordRequests SET isActive = FALSE WHERE id = ?",
+              "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE id = ?",
               [id],
               (err3) => {
                 if (err3) {
@@ -103,11 +107,11 @@ const resetPasswordSubmit = (req, res) => {
                   return res.status(500).json({ success: false, message: "Something went wrong." });
                 }
 
-                
+                // Respond with success and redirect info
                 return res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",
-                  redirect: "login.html" 
+                  redirect: "login.html"
                 });
               }
             );
@@ -120,7 +124,6 @@ const resetPasswordSubmit = (req, res) => {
     }
   );
 };
-
 
 module.exports = {
   forgotPassword,

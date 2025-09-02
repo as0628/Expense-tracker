@@ -27,7 +27,7 @@ document.getElementById("reset-form").addEventListener("submit", async function(
       msg.className = "message success";
       setTimeout(() => {
         
-        window.location.href = "/html/login.html";
+        window.location.href = "login.html";
       }, 2000);
     } else {
       msg.textContent = data.message || "Something went wrong!";
