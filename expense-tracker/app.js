@@ -14,34 +14,34 @@ const passwordRoutes = require("./routes/passwordRoutes");
 
 const app = express();
 
-// ===== Middlewares =====
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== Serve all frontend files from public =====
+
 app.use(express.static(path.join(__dirname, "public")));
 
-// Default route → signup page
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/signup.html"));
 });
 
-// ✅ Morgan Logger → save logs in "access.log"
+
 const accessLogStream = fs.createWriteStream(
   path.join(__dirname, "access.log"),
   { flags: "a" }
 );
 app.use(morgan("combined", { stream: accessLogStream }));
 
-// ===== Routes =====
+
 app.use("/api/auth", signupRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/premiumexpenses", premiumexpenseRoutes);
 app.use("/password", passwordRoutes);
 
-// ===== Centralized Error Handler =====
+
 app.use((err, req, res, next) => {
   console.error("Error:", err.stack);
   res.status(err.status || 500).json({
@@ -50,6 +50,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ===== Start Server =====
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,6 +1,4 @@
-import API_BASE_URL from "api.js"; // make sure api.js exists in /public/js
-
-// Initialize Cashfree in sandbox mode (use "production" when going live)
+import API_BASE_URL from "api.js"; 
 const cashfree = Cashfree({ mode: "sandbox" });
 
 document.getElementById("renderBtn").addEventListener("click", async () => {
@@ -11,7 +9,6 @@ document.getElementById("renderBtn").addEventListener("click", async () => {
       return;
     }
 
-    // Call backend to create order
     const res = await fetch(`${API_BASE_URL}/api/order/order`, {
       method: "POST",
       headers: {
@@ -24,14 +21,14 @@ document.getElementById("renderBtn").addEventListener("click", async () => {
     console.log("Order API response:", data);
 
     if (!data.payment_session_id) {
-      alert("❌ Failed to create Cashfree order");
+      alert(" Failed to create Cashfree order");
       return;
     }
 
-    // Open Cashfree checkout
+    
     cashfree.checkout({
       paymentSessionId: data.payment_session_id,
-      redirectTarget: "_self", // redirect back to return_url after payment
+      redirectTarget: "_self", 
     });
   } catch (err) {
     console.error("Error:", err);

@@ -21,7 +21,7 @@ document.getElementById("forgot-form").addEventListener("submit", async (e) => {
       return;
     }
 
-    // ✅ Show success with clickable reset link
+   
     messageBox.className = "success";
     messageBox.innerHTML = `
       <p>${data.message}</p>

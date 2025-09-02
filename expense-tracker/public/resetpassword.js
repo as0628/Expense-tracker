@@ -11,7 +11,7 @@ document.getElementById("reset-form").addEventListener("submit", async function(
     return;
   }
 
-  const resetId = window.location.pathname.split("/").pop(); // get id from URL
+  const resetId = window.location.pathname.split("/").pop(); 
 
   try {
     const res = await fetch(`/password/resetpassword/${resetId}`, {
@@ -26,7 +26,7 @@ document.getElementById("reset-form").addEventListener("submit", async function(
       msg.textContent = data.message;
       msg.className = "message success";
       setTimeout(() => {
-        // ✅ Corrected path: since all HTML is in /html/
+        
         window.location.href = "/html/login.html";
       }, 2000);
     } else {

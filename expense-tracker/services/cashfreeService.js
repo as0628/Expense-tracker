@@ -1,9 +1,8 @@
 const axios = require("axios");
 
-// Use environment variable for server URL (AWS or local)
 const BASE_URL = process.env.BASE_URL || "http://13.126.95.171";
 
-// Create Cashfree order
+
 const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
   try {
     const response = await axios.post(
@@ -40,7 +39,6 @@ const createOrder = async (orderId, orderAmount, userId, customerPhone) => {
   }
 };
 
-// Check payment status
 const getPaymentStatus = async (orderId) => {
   try {
     const response = await axios.get(
@@ -65,5 +63,5 @@ const getPaymentStatus = async (orderId) => {
 module.exports = {
   createOrder,
   getPaymentStatus,
-  BASE_URL, // optional export for frontend
+  BASE_URL, 
 };

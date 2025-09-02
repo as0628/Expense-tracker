@@ -10,10 +10,10 @@
   <div id="expense-container">
     <h1>Expense Tracker</h1>
 
-    <!-- 🔴 Compact top bar -->
+    
     <div class="top-bar">
       <div class="right-controls">
-        <div class="premium-badge">🌟 You are a Premium User 🌟</div>
+        <div class="premium-badge">You are a Premium User </div>
         <button id="show-leaderboard-btn">Show Leaderboard</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
@@ -141,10 +141,10 @@
         localStorage.removeItem("token");
         localStorage.removeItem("user");
        // alert("You are logged out!");
-        window.location.href = "login.html";  // make sure this file exists
+        window.location.href = "login.html";  
       });
     } else {
-      console.error("❌ Logout button not found in DOM");
+      console.error(" Logout button not found in DOM");
     }
   
 

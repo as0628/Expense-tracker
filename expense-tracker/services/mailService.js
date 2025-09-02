@@ -1,11 +1,10 @@
-// services/mailService.js
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // your gmail
-    pass: process.env.EMAIL_PASS  // app password
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS  
   }
 });
 
@@ -20,11 +19,11 @@ exports.sendPaymentSuccessEmail = async (to, orderId, amount) => {
         <p>Thank you for your payment.</p>
         <p><b>Order ID:</b> ${orderId}</p>
         <p><b>Amount:</b> ₹${amount}</p>
-        <p>Your Premium Membership is now active. 🚀</p>
+        <p>Your Premium Membership is now active. </p>
       `
     });
-    console.log("✅ Payment success email sent to", to);
+    console.log(" Payment success email sent to", to);
   } catch (err) {
-    console.error("❌ Error sending email:", err);
+    console.error(" Error sending email:", err);
   }
 };

@@ -1,4 +1,4 @@
- import API_BASE_URL from "api.js"; // ✅ use helper
+ import API_BASE_URL from "api.js"; 
 
   document.getElementById('auth-form').addEventListener('submit', async e => {
     e.preventDefault();
@@ -12,7 +12,7 @@
     console.log("Form submission payload:", payload);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {   // ✅ dynamic base
+      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -23,7 +23,7 @@
       if (res.ok) {
         console.log('Success response:', data);
         // alert('Signup successful!');
-        window.location.href = 'login.html'; // redirect after signup
+        window.location.href = 'login.html'; 
       } else {
         console.error('Server error:', data);
         alert(data.error || 'Something went wrong');

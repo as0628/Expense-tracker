@@ -1,14 +1,10 @@
 import API_BASE_URL from "api.js";
-
-// ===== JWT check =====
 const token = localStorage.getItem("token");
 if (!token) {
   window.location.href = "login.html";
 }
-
 let currentPage = 1;
 
-// ====== Load Expenses with Pagination ======
 async function loadExpenses(page = 1) {
   try {
     const pageSize = localStorage.getItem("pageSize") || 10;
@@ -28,7 +24,6 @@ async function loadExpenses(page = 1) {
       return;
     }
 
-    // === Render table ===
     const tbody = document.getElementById("expense-body");
     tbody.innerHTML = "";
 
@@ -45,7 +40,7 @@ async function loadExpenses(page = 1) {
       tbody.appendChild(tr);
     });
 
-    // === Render pagination ===
+    
     renderPagination(data.pagination);
     currentPage = data.pagination.page;
   } catch (err) {
@@ -78,7 +73,6 @@ function renderPagination({ page, totalPages }) {
   container.appendChild(nextBtn);
 }
 
-// ====== Add Expense ======
 document.getElementById("expense-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const amount = document.getElementById("amount").value.trim();
@@ -105,13 +99,12 @@ document.getElementById("expense-form").addEventListener("submit", async (e) => 
     }
 
     e.target.reset();
-    loadExpenses(currentPage); // reload same page
+    loadExpenses(currentPage); 
   } catch (err) {
     console.error("Error adding expense:", err);
   }
 });
 
-// ====== Delete Expense ======
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
   try {
@@ -131,7 +124,6 @@ async function deleteExpense(id) {
   }
 }
 
-// ====== Leaderboard + Reports ======
 document.addEventListener("DOMContentLoaded", () => {
   const leaderboardBtn = document.getElementById("show-leaderboard-btn");
   const leaderboardSection = document.getElementById("leaderboard-section");
@@ -146,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isHidden = historySection.classList.contains("hidden");
 
     if (isHidden) {
-      await loadExportHistory(); // load only when showing
+      await loadExportHistory(); 
       historySection.classList.remove("hidden");
       historyBtn.textContent = "Hide History";
     } else {
@@ -155,7 +147,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Leaderboard toggle ---
   leaderboardBtn.addEventListener("click", async () => {
     const isHidden = leaderboardSection.classList.contains("hidden");
     if (isHidden) {
@@ -190,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Load report into table ---
+  
   window.loadReport = async (period) => {
     try {
       const res = await fetch(
@@ -223,7 +214,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Download (via S3 URL) ---
   downloadBtn.addEventListener("click", async () => {
     const period = downloadBtn.dataset.period || "monthly";
     try {
@@ -244,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ====== Load Export History ======
+  
   async function loadExportHistory() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/premiumexpenses/history`, {
@@ -278,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.loadExportHistory = loadExportHistory;
 
-  // --- Page size dropdown ---
+  
   const savedSize = localStorage.getItem("pageSize") || 10;
   pageSizeSelect.value = savedSize;
   pageSizeSelect.addEventListener("change", (e) => {
@@ -286,6 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadExpenses(1);
   });
 
-  // Initial load
+  
   loadExpenses(currentPage);
 });

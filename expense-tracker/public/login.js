@@ -17,12 +17,12 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     console.log("Login response:", data);
 
     if (res.ok) {
-      // ✅ Save token + premium flag in localStorage
+      
       localStorage.setItem('token', data.token);
       localStorage.setItem('userId', data.userId);
       localStorage.setItem('isPremium', data.isPremium);
 
-      // ✅ Redirect based on premium status
+      
       if (data.isPremium === 1 || data.isPremium === true) {
         window.location.href = 'premiumexpense.html';
       } else {

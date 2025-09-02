@@ -1,18 +1,14 @@
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
-const path = require("path");  // <-- add this
+const path = require("path");  
 
-const db = require("../config/db"); // MySQL connection (no .promise)
+const db = require("../config/db"); 
 
-// ==========================
-// Forgot password - create reset link (no email sending)
-// ==========================
 const forgotPassword = (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
 
-  // Find user in DB
   db.query("SELECT * FROM signup WHERE email = ?", [email], (err, users) => {
     if (err) {
       console.error("DB error:", err);
@@ -24,8 +20,6 @@ const forgotPassword = (req, res) => {
 
     const user = users[0];
     const resetRequestId = uuidv4();
-
-    // Insert reset request
     db.query(
       "INSERT INTO ForgotPasswordRequests (id, userId, isActive) VALUES (?, ?, ?)",
       [resetRequestId, user.id, true],
@@ -44,9 +38,7 @@ const forgotPassword = (req, res) => {
   });
 };
 
-// ==========================
-// Show reset password form
-// ==========================
+
 const resetPasswordForm = (req, res) => {
   const { id } = req.params;
 
@@ -62,14 +54,12 @@ const resetPasswordForm = (req, res) => {
         return res.status(400).send("Invalid or expired reset link.");
       }
 
-      // ✅ Better: Serve frontend page instead of inline HTML
+      
       res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
     }
   );
 };
-// ==========================
-// Handle reset password submission
-// ==========================
+
 const resetPasswordSubmit = (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
@@ -93,7 +83,7 @@ const resetPasswordSubmit = (req, res) => {
       try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Update user's password
+       
         db.query(
           "UPDATE signup SET password = ? WHERE id = ?",
           [hashedPassword, requests[0].userId],
@@ -103,7 +93,7 @@ const resetPasswordSubmit = (req, res) => {
               return res.status(500).json({ success: false, message: "Failed to update password." });
             }
 
-            // Deactivate reset request
+            
             db.query(
               "UPDATE ForgotPasswordRequests SET isActive = FALSE WHERE id = ?",
               [id],
@@ -113,11 +103,11 @@ const resetPasswordSubmit = (req, res) => {
                   return res.status(500).json({ success: false, message: "Something went wrong." });
                 }
 
-                // ✅ Respond with JSON (frontend will handle UI)
+                
                 return res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",
-                  redirect: "login.html" // optional, frontend can auto-redirect
+                  redirect: "login.html" 
                 });
               }
             );

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getExpenses, addExpense, updateExpense, deleteExpense } = require('../controllers/expenseController');
-const auth = require('../middleware/auth'); // middleware to verify token
+const auth = require('../middleware/auth'); 
 
 router.get('/', auth, getExpenses);
 router.post('/', auth, addExpense);

@@ -1,6 +1,5 @@
 import API_BASE_URL from "api.js";
 
-// ✅ Step 1: Get token first
 const token = localStorage.getItem("token");
 const pageSize = 10;
 let currentPage = 1;
@@ -77,9 +76,7 @@ if (!token) {
   document.getElementById("expense-container").style.display = "block";
 }
 
-// =========================
-// Premium Purchase (updated)
-// =========================
+
 document
   .getElementById("buy-premium-btn")
   .addEventListener("click", async () => {
@@ -119,9 +116,6 @@ document
     }
   });
 
-// =========================
-// Load Expenses
-// =========================
 async function loadExpenses() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/expenses`, {
@@ -151,7 +145,7 @@ async function loadExpenses() {
   }
 }
 
-// =========================
+
 document
   .getElementById("expense-form")
   .addEventListener("submit", async (e) => {
@@ -184,7 +178,7 @@ document
     }
   });
 
-// =========================
+
 async function deleteExpense(id) {
   if (!confirm("Are you sure you want to delete this expense?")) return;
 
@@ -205,5 +199,5 @@ async function deleteExpense(id) {
   }
 }
 
-// Initial load
+
 loadExpenses();

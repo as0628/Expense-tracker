@@ -2,7 +2,7 @@ import API_BASE_URL from "api.js";
 
 (async () => {
   const params = new URLSearchParams(window.location.search);
-  const orderId = params.get("order_id");  // Cashfree adds ?order_id=xxxx
+  const orderId = params.get("order_id");  
   const token = localStorage.getItem("token");
 
   if (!orderId || !token) {
@@ -27,18 +27,18 @@ import API_BASE_URL from "api.js";
     const okBtn = document.getElementById("ok-btn");
 
     if (data.success) {
-      statusEl.innerText = "✅ Payment successful! Premium activated.";
+      statusEl.innerText = "Payment successful! Premium activated.";
       okBtn.onclick = () => {
         window.location.href = "login.html";
       };
     } else {
-      statusEl.innerText = "⚠️ Payment failed or pending.";
+      statusEl.innerText = "Payment failed or pending.";
       okBtn.onclick = () => {
         window.location.href = "expense.html";
       };
     }
 
-    // ✅ Show button in both cases
+   
     okBtn.style.display = "inline-block";
   } catch (err) {
     console.error("Verification error:", err);

@@ -3,27 +3,21 @@ const fs = require("fs");
 const path = require("path");
 const db = require("../config/db");
 const { uploadToS3 } = require("../utils/s3");
-// ==========================
+
 // Get all expenses (for premium user)
-// ==========================
-// GET /api/premiumexpenses?page=1&limit=10
 const getPremiumExpenses = (req, res) => {
   const userId = req.user.id;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10; // user decides
   const offset = (page - 1) * limit;
-
-  // Fetch total count
   db.query(
     `SELECT COUNT(*) AS total FROM expenses WHERE user_id = ?`,
     [userId],
     (err, countResult) => {
       if (err) return res.status(500).json({ error: "Database error" });
-
       const total = countResult[0].total;
       const totalPages = Math.ceil(total / limit);
-
-      db.query(
+  db.query(
         `SELECT id, amount, description, category, type, note, created_at 
          FROM expenses 
          WHERE user_id = ? 
@@ -32,8 +26,7 @@ const getPremiumExpenses = (req, res) => {
         [userId, limit, offset],
         (err2, results) => {
           if (err2) return res.status(500).json({ error: "Database error" });
-
-          res.json({
+  res.json({
             expenses: results,
             pagination: { page, limit, total, totalPages },
           });
@@ -42,24 +35,16 @@ const getPremiumExpenses = (req, res) => {
     }
   );
 };
-
-
-// ==========================
 // Add new expense & update total_expense
-// ==========================
-
 const addPremiumExpense = (req, res) => {
   const { amount, description, category, type, note } = req.body; 
   const userId = req.user.id;
-
   if (!amount || !description || !category || !type) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-
-  if (type !== "income" && type !== "expense") {
+ if (type !== "income" && type !== "expense") {
     return res.status(400).json({ error: "Invalid type (must be income or expense)" });
   }
-
   db.query(
     'INSERT INTO expenses (amount, description, category, type, note, user_id) VALUES (?, ?, ?, ?, ?, ?)',
     [amount, description, category, type, note || null, userId],
@@ -68,8 +53,7 @@ const addPremiumExpense = (req, res) => {
         console.error("Error inserting expense:", err);
         return res.status(500).json({ error: 'Database error' });
       }
-
-      if (type === "expense") {
+    if (type === "expense") {
         db.query(
           'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
           [amount, userId],
@@ -87,26 +71,19 @@ const addPremiumExpense = (req, res) => {
     }
   );
 };
-
-
-// ==========================
 // Update expense & adjust total_expense
-// ==========================
 const updatePremiumExpense = (req, res) => {
   const { id } = req.params;
   const { amount, description, category, type, note } = req.body;
   const userId = req.user.id;
-
   db.query(
     'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       if (rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
-
-      const oldAmount = rows[0].amount;
-
-      db.query(
+   const oldAmount = rows[0].amount;
+  db.query(
         'UPDATE expenses SET amount = ?, description = ?, category = ?, type = ?, note = ? WHERE id = ? AND user_id = ?',
         [amount, description, category, type, note || null, id, userId],
         (err2, result) => {
@@ -115,8 +92,7 @@ const updatePremiumExpense = (req, res) => {
           if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Expense not found' });
           }
-
-          const diff = amount - oldAmount;
+         const diff = amount - oldAmount;
           db.query(
             'UPDATE signup SET total_expense = total_expense + ? WHERE id = ?',
             [diff, userId],
@@ -130,31 +106,24 @@ const updatePremiumExpense = (req, res) => {
     }
   );
 };
-
-// ==========================
 // Delete expense & reduce total_expense
-// ==========================
 const deletePremiumExpense = (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
-
   db.query(
     'SELECT amount FROM expenses WHERE id = ? AND user_id = ?',
     [id, userId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       if (rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
-
-      const expenseAmount = rows[0].amount;
-
-      db.query(
+     const expenseAmount = rows[0].amount;
+     db.query(
         'DELETE FROM expenses WHERE id = ? AND user_id = ?',
         [id, userId],
         (err2, result) => {
           if (err2) return res.status(500).json({ error: 'Database error' });
           if (result.affectedRows === 0) return res.status(404).json({ error: 'Expense not found' });
-
-          db.query(
+     db.query(
             'UPDATE signup SET total_expense = total_expense - ? WHERE id = ?',
             [expenseAmount, userId],
             (err3) => {
@@ -167,10 +136,7 @@ const deletePremiumExpense = (req, res) => {
     }
   );
 };
-
-// ==========================
 // Leaderboard
-// ==========================
 const getLeaderboard = (req, res) => {
   const query = `
     SELECT id, name, total_expense
@@ -179,8 +145,7 @@ const getLeaderboard = (req, res) => {
     ORDER BY total_expense DESC
     LIMIT 10;
   `;
-
-  db.query(query, (err, results) => {
+ db.query(query, (err, results) => {
     if (err) {
       console.error("Leaderboard query error:", err);
       return res.status(500).json({ error: "Database error" });
@@ -188,18 +153,12 @@ const getLeaderboard = (req, res) => {
     res.json(results);
   });
 };
-
-// ==========================
 // Reports (Daily, Weekly, Monthly)
-// ==========================
-
 const getReport = async (req, res) => {
   try {
     const { period } = req.query;
     const userId = req.user.id;
-
     let query = "";
-
     if (period === "daily") {
       query = `
         SELECT 
@@ -231,32 +190,22 @@ const getReport = async (req, res) => {
     } else {
       return res.status(400).json({ error: "Invalid period" });
     }
-
     db.query(query, [userId], (err, rows) => {
       if (err) {
         console.error("Report query error:", err);
         return res.status(500).json({ error: "Failed to generate report" });
       }
-
-      const result = rows.length > 0
+    const result = rows.length > 0
         ? rows
         : [{ period, total_income: 0, total_expense: 0 }];
-
-      res.json(result);
+    res.json(result);
     });
   } catch (err) {
     console.error("Report query error:", err);
     res.status(500).json({ error: "Failed to generate report" });
   }
 };
-
-
-
 // Download Expense Report
-
-
-
-
 const downloadReport = async (req, res) => {
   try {
     if (!req.user.isPremium) {
@@ -266,9 +215,8 @@ const downloadReport = async (req, res) => {
     const { period } = req.query;
     const userId = req.user.id;
 
-    console.log("📥 Generating Excel Report for user:", userId, "period:", period);
-
-    // === Detailed Transactions ===
+    console.log("Generating Excel Report for user:", userId, "period:", period);
+   // === Detailed Transactions ===
     const [rows] = await db.promise().query(
       `SELECT 
          id, amount, description, category, type, note, created_at AS date
@@ -277,7 +225,6 @@ const downloadReport = async (req, res) => {
        ORDER BY created_at ASC`,
       [userId]
     );
-
     // === Yearly Summary ===
     const [yearly] = await db.promise().query(
       `SELECT 
@@ -290,8 +237,7 @@ const downloadReport = async (req, res) => {
        ORDER BY MIN(created_at)`,
       [userId]
     );
-
-    // === Notes ===
+// === Notes ===
     const [notes] = await db.promise().query(
       `SELECT created_at AS date, note
        FROM expenses
@@ -299,11 +245,9 @@ const downloadReport = async (req, res) => {
        ORDER BY created_at ASC`,
       [userId]
     );
-
-    // === Create Excel Workbook ===
+// === Create Excel Workbook ===
     const workbook = new ExcelJS.Workbook();
-
-    // --- Sheet 1: Detailed Expenses ---
+// --- Sheet 1: Detailed Expenses ---
     const sheet1 = workbook.addWorksheet("Detailed Expenses");
     sheet1.columns = [
       { header: "Date", key: "date", width: 15 },
@@ -334,8 +278,7 @@ const downloadReport = async (req, res) => {
       expense: totalExpense,
       savings: totalIncome - totalExpense,
     });
-
-    // --- Sheet 2: Yearly Summary ---
+  // --- Sheet 2: Yearly Summary ---
     const sheet2 = workbook.addWorksheet("Yearly Summary");
     sheet2.columns = [
       { header: "Month", key: "month", width: 20 },
@@ -360,8 +303,7 @@ const downloadReport = async (req, res) => {
       expense: yearlyExpense,
       savings: yearlyIncome - yearlyExpense,
     });
-
-    // --- Sheet 3: Notes ---
+  // --- Sheet 3: Notes ---
     const sheet3 = workbook.addWorksheet("Yearly Notes");
     sheet3.columns = [
       { header: "Date", key: "date", width: 20 },
@@ -377,22 +319,18 @@ const downloadReport = async (req, res) => {
     } else {
       sheet3.addRow({ date: "—", note: "No notes found" });
     }
-
-    console.log("✅ All sheets filled");
-
-    // === Generate buffer ===
+   console.log("All sheets filled");
+  // === Generate buffer ===
     const buffer = await workbook.xlsx.writeBuffer();
-    console.log("✅ Excel buffer generated, size:", buffer.byteLength);
-
-    // === Upload to S3 ===
+    console.log(" Excel buffer generated, size:", buffer.byteLength);
+   // === Upload to S3 ===
     const fileKey = `reports/user-${userId}-${Date.now()}.xlsx`;
     const url = await uploadToS3(
       buffer,
       fileKey,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
-
-    // === Save history (bonus) ===
+// === Save history (bonus) ===
     await db.promise().query(
       "INSERT INTO export_history (user_id, s3_key, url) VALUES (?, ?, ?)",
       [userId, fileKey, url]
@@ -400,42 +338,35 @@ const downloadReport = async (req, res) => {
 
     // === Respond with URL ===
     res.json({ fileUrl: url });
-    console.log("📤 Report uploaded to S3 and URL sent:", url);
+    console.log("Report uploaded to S3 and URL sent:", url);
 
   } catch (err) {
-    console.error("❌ Unexpected error in downloadReport:", err);
+    console.error(" Unexpected error in downloadReport:", err);
     res.status(500).json({ error: "Unexpected error" });
   }
 };
-// ==========================
 // Get Export History
-// ==========================
 const getExportHistory = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const [rows] = await db.promise().query(
+   const [rows] = await db.promise().query(
       "SELECT id, s3_key, url, created_at FROM export_history WHERE user_id = ? ORDER BY created_at DESC",
       [userId]
     );
 
     res.json(rows);
   } catch (err) {
-    console.error("❌ Error fetching export history:", err);
+    console.error(" Error fetching export history:", err);
     res.status(500).json({ error: "Failed to fetch export history" });
   }
 };
-
-
-
-
-
-
 module.exports = { 
   getPremiumExpenses, 
   addPremiumExpense, 
   updatePremiumExpense, 
   deletePremiumExpense,
   getLeaderboard,
-  getReport,downloadReport,getExportHistory
+  getReport,
+  downloadReport, 
+  getExportHistory
 };

@@ -7,17 +7,14 @@ const {
   deletePremiumExpense,
   getLeaderboard,getReport,downloadReport,getExportHistory
 } = require('../controllers/premiumexpenseController');
-const auth = require('../middleware/auth'); // middleware to verify token
+const auth = require('../middleware/auth'); 
 
-// Premium expenses CRUD
 router.get('/', auth, getPremiumExpenses);
 router.post('/', auth, addPremiumExpense);
 router.put('/:id', auth, updatePremiumExpense);
 router.delete('/:id', auth, deletePremiumExpense);
 router.get('/report', auth, getReport);
-
 router.get("/download", auth, downloadReport);
-// Leaderboard route
 router.get('/leaderboard', auth, getLeaderboard);
 router.get("/history", auth, getExportHistory);
 

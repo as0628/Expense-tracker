@@ -10,13 +10,12 @@
   <div id="expense-container">
     <h1>Expense Tracker</h1>
     
-    <!-- Top Buttons (Premium + Logout) -->
     <div class="top-bar">
       <button id="buy-premium-btn">Buy Premium</button>
       <button id="logout-btn">Logout</button>
     </div>
 
-    <!-- Add Expense Form -->
+    
     <form id="expense-form" class="expense-row">
       <input type="number" id="amount" placeholder="Amount spent" required class="form-input">
       <input type="text" id="description" placeholder="Description" required class="form-input">
@@ -27,7 +26,7 @@
         <option value="Salary">Salary</option>
         <option value="Others">Others</option>
       </select>
-      <!-- ✅ New Note input -->
+      
       <input type="text" id="note" placeholder="Note (optional)" class="form-input">
 
       <button type="submit" class="add-btn">Add Expense</button>
@@ -40,25 +39,25 @@
           <th>Amount</th>
           <th>Description</th>
           <th>Category</th>
-          <th>Note</th> <!-- ✅ Added Note column -->
+          <th>Note</th> 
           <th>Action</th>
         </tr>
       </thead>
       <tbody id="expense-body"></tbody>
     </table>
 
-    <!-- Locked Download Button -->
+    
     <button id="download-btn" class="locked">Download Expenses</button>
   </div>
 
   <script>
-    // Handle Download Button (non-premium users)
+   
     document.getElementById("download-btn").addEventListener("click", function (e) {
       e.preventDefault();
       alert("Buy Premium to use this feature!");
     });
 
-    // Handle Logout
+    
     document.getElementById("logout-btn").addEventListener("click", function () {
       localStorage.removeItem("token");
       window.location.href = "login.html";
