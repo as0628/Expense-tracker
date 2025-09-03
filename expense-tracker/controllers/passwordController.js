@@ -2,8 +2,15 @@ const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 const path = require("path");
+const Sib = require("sib-api-v3-sdk");
 
 const db = require("../config/db");
+
+// Setup Brevo client
+const client = Sib.ApiClient.instance;
+const apiKey = client.authentications["api-key"];
+apiKey.apiKey = process.env.SENDINBLUE_API;
+const tranEmailApi = new Sib.TransactionalEmailsApi();
 
 // ===== Forgot Password =====
 const forgotPassword = (req, res) => {
@@ -25,21 +32,39 @@ const forgotPassword = (req, res) => {
     db.query(
       "INSERT INTO forgotpasswordrequests (id, userId, isActive) VALUES (?, ?, ?)",
       [resetRequestId, user.id, true],
-      (err2) => {
+      async (err2) => {
         if (err2) {
           console.error("Insert error:", err2);
           return res.status(500).json({ error: "Failed to create reset request" });
         }
 
-        // Use FRONTEND_URL from .env (your EC2 public IP or domain)
         const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
         console.log("Reset URL:", resetUrl);
 
-        res.json({ message: "Password reset link created!", resetUrl });
+        try {
+          await tranEmailApi.sendTransacEmail({
+            sender: { email: process.env.FROM_EMAIL, name: "Expense Tracker" },
+            to: [{ email }],
+            subject: "Reset Your Password - Expense Tracker",
+            htmlContent: `
+              <h2>Password Reset</h2>
+              <p>Hello ${user.name || "User"},</p>
+              <p>You requested to reset your password. Click the link below:</p>
+              <p><a href="${resetUrl}" target="_blank">${resetUrl}</a></p>
+              <p>If you did not request this, please ignore this email.</p>
+            `
+          });
+
+          res.json({ message: "Password reset link sent to your email!" });
+        } catch (mailErr) {
+          console.error("Email send error:", mailErr);
+          res.status(500).json({ error: "Failed to send email" });
+        }
       }
     );
   });
 };
+
 
 // ===== Reset Password Form =====
 const resetPasswordForm = (req, res) => {

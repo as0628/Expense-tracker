@@ -1,4 +1,4 @@
-import API_BASE_URL from "api.js";
+import API_BASE_URL from "./api.js";
 
 document.getElementById("forgot-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -17,16 +17,12 @@ document.getElementById("forgot-form").addEventListener("submit", async (e) => {
 
     if (!res.ok) {
       messageBox.className = "error";
-      messageBox.textContent = data.error || "Something went wrong";
+      messageBox.textContent = data?.error || "Something went wrong";
       return;
     }
 
-   
     messageBox.className = "success";
-    messageBox.innerHTML = `
-      <p>${data.message}</p>
-      <p>Reset Link: <a href="${data.resetUrl}" target="_blank">${data.resetUrl}</a></p>
-    `;
+    messageBox.textContent = "Check your email inbox for password reset instructions.";
   } catch (err) {
     console.error("Error:", err);
     messageBox.className = "error";
