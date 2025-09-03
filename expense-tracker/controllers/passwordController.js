@@ -2,7 +2,6 @@ const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 const path = require("path");
-
 const db = require("../config/db");
 
 // ===== Forgot Password =====
@@ -16,19 +15,19 @@ const forgotPassword = (req, res) => {
 
     const user = users[0];
 
-    // Deactivate any previous active reset requests for this user
+    // Deactivate previous active reset requests
     db.query(
       "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE userId = ?",
       [user.id],
-      (err) => {
-        if (err) console.error("Failed to deactivate old reset requests:", err);
+      (err2) => {
+        if (err2) console.error("Failed to deactivate old requests:", err2);
 
         const resetRequestId = uuidv4();
         db.query(
           "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, TRUE, NOW())",
           [resetRequestId, user.id],
-          (err2) => {
-            if (err2) return res.status(500).json({ error: "Failed to create reset request" });
+          (err3) => {
+            if (err3) return res.status(500).json({ error: "Failed to create reset request" });
 
             const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
             console.log("Reset URL:", resetUrl);
@@ -70,7 +69,7 @@ const resetPasswordSubmit = (req, res) => {
     "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
     [id],
     async (err, requests) => {
-      if (err) return res.status(500).json({ success: false, message: "Something went wrong." });
+      if (err) return res.status(500).json({ success: false, message: "Database error." });
       if (requests.length === 0) return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
 
       try {
@@ -91,7 +90,7 @@ const resetPasswordSubmit = (req, res) => {
                 res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",
-                  redirect: "login.html"
+                  redirect: "login.html",
                 });
               }
             );
