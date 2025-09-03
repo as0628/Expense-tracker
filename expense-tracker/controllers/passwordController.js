@@ -8,7 +8,9 @@ const db = require("../config/db");
 // ===== Forgot Password =====
 const forgotPassword = (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email is required" });
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
 
   db.query("SELECT * FROM signup WHERE email = ?", [email], (err, users) => {
     if (err) {
@@ -31,7 +33,7 @@ const forgotPassword = (req, res) => {
           return res.status(500).json({ error: "Failed to create reset request" });
         }
 
-        // Use FRONTEND_URL from .env (your EC2 public IP or domain)
+        // Construct the reset URL using FRONTEND_URL from .env
         const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
         console.log("Reset URL:", resetUrl);
 
@@ -44,6 +46,7 @@ const forgotPassword = (req, res) => {
 // ===== Reset Password Form =====
 const resetPasswordForm = (req, res) => {
   const { id } = req.params;
+  console.log("Reset link requested:", id); // Debug log
 
   db.query(
     "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
@@ -54,6 +57,7 @@ const resetPasswordForm = (req, res) => {
         return res.status(500).send("Something went wrong.");
       }
       if (requests.length === 0) {
+        console.log("Invalid or expired reset link:", id); // Debug log
         return res.status(400).send("Invalid or expired reset link.");
       }
 
@@ -107,7 +111,7 @@ const resetPasswordSubmit = (req, res) => {
                   return res.status(500).json({ success: false, message: "Something went wrong." });
                 }
 
-                // Respond with success and redirect info
+                // Respond with success message and optional redirect
                 return res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",

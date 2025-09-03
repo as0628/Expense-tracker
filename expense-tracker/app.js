@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
 });
 
 
+
 const accessLogStream = fs.createWriteStream(
   path.join(__dirname, "access.log"),
   { flags: "a" }
