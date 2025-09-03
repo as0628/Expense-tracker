@@ -143,7 +143,7 @@ const getLeaderboard = (req, res) => {
     FROM signup
     WHERE isPremium = 1
     ORDER BY total_expense DESC
-    LIMIT 30;
+    LIMIT 10;
   `;
  db.query(query, (err, results) => {
     if (err) {
