@@ -9,7 +9,9 @@
 <body>
   <div id="expense-container">
     <h1>Expense Tracker</h1>
-
+<div id="debug-token" style="background:#222;color:#0f0;padding:10px;margin-bottom:10px;word-wrap:break-word;">
+      Loading token...
+    </div>
     <!-- Top bar -->
     <div class="top-bar">
       <div class="right-controls">
@@ -136,10 +138,17 @@
       ? "http://localhost:3000"
       : "http://3.109.62.226"; // remove :3000 if nginx proxy is handling /api
 
-  const token = localStorage.getItem("token");
-  if (!token) {
+    const token = localStorage.getItem("token");
+
+  // ✅ Debug: show token on page and console
+  if (token) {
+    console.log("🔑 Token from localStorage:", token);
+    document.getElementById("debug-token").innerText = "Token: " + token;
+  } else {
+    document.getElementById("debug-token").innerText = "❌ No token found, redirecting...";
     window.location.href = "login.html";
   }
+
 
   // ✅ DOM references
   const leaderboardBtn = document.getElementById("show-leaderboard-btn");
