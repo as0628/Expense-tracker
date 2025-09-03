@@ -7,7 +7,11 @@ const {
 } = require("../controllers/passwordController");
 
 router.post("/forgotpassword", forgotPassword);
-router.get("/resetpassword/:id", resetPasswordForm);
+router.get("/resetpassword/:id", (req, res) => {
+  // Optional: validate the ID in DB
+  res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
+});
+
 router.post("/resetpassword/:id", resetPasswordSubmit);
 
 module.exports = router;
