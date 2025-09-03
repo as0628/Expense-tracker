@@ -6,10 +6,10 @@ const { uploadToS3 } = require("../utils/s3");
 
 // Get all expenses (for premium user)
 const getPremiumExpenses = (req, res) => {
-  const userId = req.user.id;//gets the logged-in user’s ID from req.user
+  const userId = req.user.id;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10; //used for pagination or filtering.
-  const offset = (page - 1) * limit;//it calculate how many records to skip in sql
+  const limit = parseInt(req.query.limit) || 10; // user decides
+  const offset = (page - 1) * limit;
   db.query(
     `SELECT COUNT(*) AS total FROM expenses WHERE user_id = ?`,
     [userId],
@@ -73,7 +73,7 @@ const addPremiumExpense = (req, res) => {
 };
 // Update expense & adjust total_expense
 const updatePremiumExpense = (req, res) => {
-  const { id } = req.params;//it extracts the expense id from the request URL
+  const { id } = req.params;
   const { amount, description, category, type, note } = req.body;
   const userId = req.user.id;
   db.query(
@@ -142,7 +142,8 @@ const getLeaderboard = (req, res) => {
     SELECT id, name, total_expense
     FROM signup
     WHERE isPremium = 1
-    ORDER BY total_expense DESC;
+    ORDER BY total_expense DESC
+    LIMIT 10;
   `;
  db.query(query, (err, results) => {
     if (err) {
