@@ -6,7 +6,7 @@
   <title>Premium Expense Tracker</title>
   <link rel="stylesheet" href="premiumexpense.css" />
   <style>
-    /* Add these styles to keep pagination inside card, right corner */
+    /* Pagination inside card, aligned to right corner */
     .expense-pagination-container {
       display: flex;
       justify-content: flex-end;
@@ -24,9 +24,10 @@
   <div id="expense-container">
     <h1>Expense Tracker</h1>
 
+    <!-- Top bar -->
     <div class="top-bar">
       <div class="right-controls">
-        <div class="premium-badge">You are a Premium User </div>
+        <div class="premium-badge">You are a Premium User</div>
         <button id="show-leaderboard-btn">Show Leaderboard</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
@@ -75,7 +76,7 @@
           <tbody id="expense-body"></tbody>
         </table>
 
-        <!-- Pagination moved inside Expense List card -->
+        <!-- Pagination inside Expense List card -->
         <div class="expense-pagination-container">
           <div class="pagination-controls">
             <label for="expensePageSizeSelect">Items per page:</label>
@@ -138,12 +139,27 @@
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
+
+      <!-- (Optional) Add pagination for leaderboard -->
+      <div class="expense-pagination-container">
+        <div class="pagination-controls">
+          <label for="leaderboardPageSizeSelect">Items per page:</label>
+          <select id="leaderboardPageSizeSelect">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+          </select>
+        </div>
+        <div class="pagination" id="leaderboard-pagination"></div>
+      </div>
     </div>
   </div>
 
   <script src="premiumexpense.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      // Logout
       const logoutBtn = document.getElementById("logout-btn");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
@@ -152,6 +168,8 @@
           window.location.href = "login.html";  
         });
       }
+
+      // Leaderboard toggle
       const leaderboardBtn = document.getElementById("show-leaderboard-btn");
       const leaderboardSection = document.getElementById("leaderboard-section");
       if (leaderboardBtn) {
