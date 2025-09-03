@@ -6,17 +6,17 @@
   <title>Premium Expense Tracker</title>
   <link rel="stylesheet" href="premiumexpense.css" />
   <style>
-    /* Pagination inside card, aligned to right corner */
+    /* Keep pagination inside card, right corner */
     .expense-pagination-container {
       display: flex;
-      justify-content: flex-end;
+      justify-content: flex-end;  /* Align to right */
       align-items: center;
-      margin-top: 10px;
+      margin-top: 12px;
       gap: 15px;
     }
     .expense-pagination-container .pagination {
       display: flex;
-      gap: 5px;
+      gap: 6px;
     }
   </style>
 </head>
@@ -24,10 +24,9 @@
   <div id="expense-container">
     <h1>Expense Tracker</h1>
 
-    <!-- Top bar -->
     <div class="top-bar">
       <div class="right-controls">
-        <div class="premium-badge">You are a Premium User</div>
+        <div class="premium-badge">You are a Premium User </div>
         <button id="show-leaderboard-btn">Show Leaderboard</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
@@ -76,7 +75,7 @@
           <tbody id="expense-body"></tbody>
         </table>
 
-        <!-- Pagination inside Expense List card -->
+        <!-- ✅ Pagination INSIDE card -->
         <div class="expense-pagination-container">
           <div class="pagination-controls">
             <label for="expensePageSizeSelect">Items per page:</label>
@@ -139,27 +138,12 @@
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
-
-      <!-- (Optional) Add pagination for leaderboard -->
-      <div class="expense-pagination-container">
-        <div class="pagination-controls">
-          <label for="leaderboardPageSizeSelect">Items per page:</label>
-          <select id="leaderboardPageSizeSelect">
-            <option value="5" selected>5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="25">25</option>
-          </select>
-        </div>
-        <div class="pagination" id="leaderboard-pagination"></div>
-      </div>
     </div>
   </div>
 
   <script src="premiumexpense.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Logout
       const logoutBtn = document.getElementById("logout-btn");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
@@ -168,8 +152,6 @@
           window.location.href = "login.html";  
         });
       }
-
-      // Leaderboard toggle
       const leaderboardBtn = document.getElementById("show-leaderboard-btn");
       const leaderboardSection = document.getElementById("leaderboard-section");
       if (leaderboardBtn) {
