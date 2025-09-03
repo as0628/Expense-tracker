@@ -5,7 +5,7 @@ require("dotenv").config();
 const { SECRET_KEY } = process.env;
 
 const signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password } = req.body;//data sent by the client
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'All fields required' });
   }
