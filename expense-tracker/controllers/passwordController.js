@@ -25,6 +25,8 @@ const forgotPassword = (req, res) => {
 
         db.query(
           "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, TRUE, NOW())",
+          
+
           [resetRequestId, user.id],
           (err2) => {
             if (err2) {
@@ -34,6 +36,8 @@ const forgotPassword = (req, res) => {
 
             const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
             console.log("Reset URL:", resetUrl);
+        console.log("Inserted reset request:", result); // <-- result undefined
+
 
             res.json({ message: "Password reset link created!", resetUrl });
           }
