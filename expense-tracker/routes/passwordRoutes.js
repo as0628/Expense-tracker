@@ -1,7 +1,10 @@
 const express = require("express");
-const path = require("path");
 const router = express.Router();
-const { forgotPassword, resetPasswordForm, resetPasswordSubmit } = require("../controllers/passwordController");
+const { 
+  forgotPassword, 
+  resetPasswordForm, 
+  resetPasswordSubmit 
+} = require("../controllers/passwordController");
 
 router.post("/forgotpassword", forgotPassword);
 router.get("/resetpassword/:id", resetPasswordForm);
