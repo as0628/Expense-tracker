@@ -137,45 +137,22 @@ const deletePremiumExpense = (req, res) => {
   );
 };
 // Leaderboard
-// Leaderboard with Pagination
 const getLeaderboard = (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10; // default 10 per page
-  const offset = (page - 1) * limit;
-
-  // First get total count
-  const countQuery = `SELECT COUNT(*) AS total FROM signup WHERE isPremium = 1`;
-  db.query(countQuery, (err, countResult) => {
+  const query = `
+    SELECT id, name, total_expense
+    FROM signup
+    WHERE isPremium = 1
+    ORDER BY total_expense DESC
+    LIMIT 10;
+  `;
+ db.query(query, (err, results) => {
     if (err) {
-      console.error("Leaderboard count error:", err);
+      console.error("Leaderboard query error:", err);
       return res.status(500).json({ error: "Database error" });
     }
-
-    const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
-
-    // Now get leaderboard users with limit/offset
-    const query = `
-      SELECT id, name, total_expense
-      FROM signup
-      WHERE isPremium = 1
-      ORDER BY total_expense DESC
-      LIMIT ? OFFSET ?;
-    `;
-    db.query(query, [limit, offset], (err2, results) => {
-      if (err2) {
-        console.error("Leaderboard query error:", err2);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      res.json({
-        leaderboard: results,
-        pagination: { page, limit, total, totalPages },
-      });
-    });
+    res.json(results);
   });
 };
-
 // Reports (Daily, Weekly, Monthly)
 const getReport = async (req, res) => {
   try {
