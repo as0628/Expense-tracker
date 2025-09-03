@@ -5,11 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Premium Expense Tracker</title>
   <link rel="stylesheet" href="premiumexpense.css" />
-  <style>
-    .pagination-controls { margin-top: 10px; }
-    .pagination button { margin: 0 2px; padding: 5px 10px; }
-    .hidden { display: none; }
-  </style>
 </head>
 <body>
   <div id="expense-container">
@@ -51,7 +46,19 @@
     <div class="grid">
       <!-- Expense List -->
       <div class="card">
-        <h3>Expense List</h3>
+        <div class="card-header">
+          <h3>Expense List</h3>
+          <div class="pagination-controls">
+            <label for="expensePageSize">Items per page:</label>
+            <select id="expensePageSize">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="25">25</option>
+            </select>
+          </div>
+        </div>
+
         <table>
           <thead>
             <tr>
@@ -65,16 +72,7 @@
           </thead>
           <tbody id="expense-body"></tbody>
         </table>
-        <div class="pagination-controls">
-          <label for="pageSizeSelect">Items per page:</label>
-          <select id="pageSizeSelect">
-            <option value="3">3</option>
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="40">40</option>
-          </select>
-        </div>
-        <div class="pagination" id="pagination"></div>
+        <div class="pagination" id="expense-pagination"></div>
       </div>
 
       <!-- Expense Reports -->
@@ -95,7 +93,7 @@
           </thead>
           <tbody id="report-body"></tbody>
         </table>
-        
+
         <button id="download-btn" class="download-btn" disabled>⬇ Download Report</button>
         <h3>Export History</h3>
         <table id="history-section" class="hidden">
@@ -114,7 +112,19 @@
 
     <!-- Leaderboard -->
     <div class="card hidden" id="leaderboard-section">
-      <h3>Leaderboard</h3>
+      <div class="card-header">
+        <h3>Leaderboard</h3>
+        <div class="pagination-controls">
+          <label for="leaderboardPageSize">Items per page:</label>
+          <select id="leaderboardPageSize">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+          </select>
+        </div>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -125,35 +135,10 @@
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
-      <div id="leaderboard-pagination" class="pagination"></div>
+      <div class="pagination" id="leaderboard-pagination"></div>
     </div>
   </div>
 
   <script src="premiumexpense.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const logoutBtn = document.getElementById("logout-btn");
-      const leaderboardBtn = document.getElementById("show-leaderboard-btn");
-      const leaderboardSection = document.getElementById("leaderboard-section");
-
-      // Logout
-      logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "login.html";
-      });
-
-      // Show/Hide Leaderboard
-      leaderboardBtn.addEventListener("click", () => {
-        leaderboardSection.classList.toggle("hidden");
-        leaderboardBtn.textContent = leaderboardSection.classList.contains("hidden")
-          ? "Show Leaderboard"
-          : "Hide Leaderboard";
-        if (!leaderboardSection.classList.contains("hidden")) {
-          if (typeof loadLeaderboard === "function") loadLeaderboard(1);
-        }
-      });
-    });
-  </script>
 </body>
 </html>
