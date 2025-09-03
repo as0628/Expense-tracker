@@ -1,7 +1,8 @@
 // premium.js
 
 // Use API_BASE_URL from api.js (must be defined in HTML first)
-const API_BASE_URL = window.API_BASE_URL || "http://3.109.62.226:3000";
+const API_BASE_URL = window.API_BASE_URL || "";
+
 
 // Authentication check
 const token = localStorage.getItem("token");

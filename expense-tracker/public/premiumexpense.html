@@ -10,6 +10,7 @@
   <div id="expense-container">
     <h1>Expense Tracker</h1>
 
+    
     <div class="top-bar">
       <div class="right-controls">
         <div class="premium-badge">You are a Premium User </div>
@@ -20,28 +21,29 @@
 
     <!-- Add Expense -->
     <div class="card">
-      <h3>Add Expense</h3>
-      <form id="expense-form" class="expense-form-layout">
-        <div class="expense-row">
-          <input type="number" id="amount" class="form-input" placeholder="Amount" required />
-          <input type="text" id="description" class="form-input" placeholder="Description" required />
-          <select id="category" class="form-input" required>
-            <option value="">Select Category</option>
-            <option value="Food">Food</option>
-            <option value="Petrol">Petrol</option>
-            <option value="Salary">Salary</option>
-            <option value="Others">Others</option>
-          </select>
-          <select id="type" class="form-input" required>
-            <option value="">Select Type</option>
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
-          <input type="text" id="note" class="form-input" placeholder="Note (optional)" />
-          <button type="submit" class="add-btn">Add Expense</button>
-        </div>
-      </form>
+  <h3>Add Expense</h3>
+  <form id="expense-form" class="expense-form-layout">
+    <div class="expense-row">
+      <input type="number" id="amount" class="form-input" placeholder="Amount" required />
+      <input type="text" id="description" class="form-input" placeholder="Description" required />
+      <select id="category" class="form-input" required>
+        <option value="">Select Category</option>
+        <option value="Food">Food</option>
+        <option value="Petrol">Petrol</option>
+        <option value="Salary">Salary</option>
+        <option value="Others">Others</option>
+      </select>
+      <select id="type" class="form-input" required>
+        <option value="">Select Type</option>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+       <input type="text" id="note" class="form-input" placeholder="Note (optional)" />
+      <button type="submit" class="add-btn">Add Expense</button>
     </div>
+  </form>
+</div>
+
 
     <div class="grid">
       <!-- Expense List -->
@@ -82,20 +84,20 @@
         </table>
         
         <button id="download-btn" class="download-btn" disabled>⬇ Download Report</button>
-
         <h3>Export History</h3>
-        <table id="history-section" class="hidden">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Generated At</th>
-              <th>Download</th>
-            </tr>
-          </thead>
-          <tbody id="history-body"></tbody>
-        </table>
+<table id="history-section" class="hidden">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Generated At</th>
+      <th>Download</th>
+    </tr>
+  </thead>
+  <tbody id="history-body"></tbody>
+</table>
 
-        <button id="toggle-history-btn">Show History</button>
+<button id="toggle-history-btn">Show History</button>
+
       </div>
     </div>
 
@@ -113,33 +115,49 @@
         <tbody id="leaderboard-body"></tbody>
       </table>
     </div>
-
-    <!-- Pagination -->
     <div class="pagination-controls">
-      <label for="pageSizeSelect">Items per page:</label>
-      <select id="pageSizeSelect">
-        <option value="3">3</option>
-        <option value="10" selected>10</option>
-        <option value="20">20</option>
-        <option value="40">40</option>
-      </select>
-    </div>
-    <div class="pagination" id="pagination"></div>
+  <label for="pageSizeSelect">Items per page:</label>
+  <select id="pageSizeSelect">
+    <option value="3">3</option>
+    <option value="10" selected>10</option>
+    <option value="20">20</option>
+    <option value="40">40</option>
+  </select>
+</div>
+
+<div class="pagination" id="pagination"></div>
+
   </div>
 
-  <!-- Define API base before premium.js -->
-  <script>
-    const API_BASE_URL = "http://3.109.62.226";
-  </script>
   <script src="premiumexpense.js"></script>
+<script>
+   document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.getElementById("logout-btn");
+    console.log("Logout button element:", logoutBtn);
 
-  <!-- Logout handler only -->
-  <script>
-    document.getElementById("logout-btn").addEventListener("click", () => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "login.html";
-    });
-  </script>
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        console.log("Logout clicked!");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+       // alert("You are logged out!");
+        window.location.href = "login.html";  
+      });
+    } else {
+      console.error(" Logout button not found in DOM");
+    }
+  
+
+    if (leaderboardBtn) {
+      leaderboardBtn.addEventListener("click", () => {
+        leaderboardSection.classList.toggle("hidden");
+        leaderboardBtn.textContent = leaderboardSection.classList.contains("hidden")
+          ? "Show Leaderboard"
+          : "Hide Leaderboard";
+      });
+    }
+  });
+</script>
+
 </body>
 </html>
