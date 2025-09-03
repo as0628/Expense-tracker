@@ -1,4 +1,4 @@
-import API_BASE_URL from "api.js";
+import API_BASE_URL from "./api.js";
 
 document.getElementById("forgot-form").addEventListener("submit", async (e) => {
   e.preventDefault();
