@@ -5,13 +5,14 @@ const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306 // Ensure port is used from .env
 });
 
 db.connect(err => {
   if (err) {
     console.error("DB connection error:", err);
-    process.exit(1);
+    process.exit(1); // Exit if cannot connect
   }
   console.log("Connected to MySQL database");
 });
