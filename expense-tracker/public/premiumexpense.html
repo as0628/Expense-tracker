@@ -5,14 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Premium Expense Tracker</title>
   <link rel="stylesheet" href="premiumexpense.css" />
+  <style>
+    .pagination {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+      gap: 6px;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: teal;
+      color: #fff;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    .pagination-controls {
+      margin-top: 10px;
+    }
+    .leaderboard-controls {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
   <div id="expense-container">
     <h1>Expense Tracker</h1>
 
+    <!-- Top bar -->
     <div class="top-bar">
       <div class="right-controls">
-        <div class="premium-badge">You are a Premium User</div>
+        <div class="premium-badge">You are a Premium User </div>
         <button id="show-leaderboard-btn">Show Leaderboard</button>
         <button class="logout-btn" id="logout-btn">Logout</button>
       </div>
@@ -46,19 +76,7 @@
     <div class="grid">
       <!-- Expense List -->
       <div class="card">
-        <div class="card-header">
-          <h3>Expense List</h3>
-          <div class="pagination-controls">
-            <label for="expensePageSize">Items per page:</label>
-            <select id="expensePageSize">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="20">20</option>
-              <option value="25">25</option>
-            </select>
-          </div>
-        </div>
-
+        <h3>Expense List</h3>
         <table>
           <thead>
             <tr>
@@ -72,6 +90,16 @@
           </thead>
           <tbody id="expense-body"></tbody>
         </table>
+        <!-- Pagination inside expense card -->
+        <div class="pagination-controls">
+          <label for="pageSizeSelect">Items per page:</label>
+          <select id="pageSizeSelect">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="40">40</option>
+          </select>
+        </div>
         <div class="pagination" id="expense-pagination"></div>
       </div>
 
@@ -93,7 +121,7 @@
           </thead>
           <tbody id="report-body"></tbody>
         </table>
-
+        
         <button id="download-btn" class="download-btn" disabled>⬇ Download Report</button>
         <h3>Export History</h3>
         <table id="history-section" class="hidden">
@@ -112,19 +140,16 @@
 
     <!-- Leaderboard -->
     <div class="card hidden" id="leaderboard-section">
-      <div class="card-header">
-        <h3>Leaderboard</h3>
-        <div class="pagination-controls">
-          <label for="leaderboardPageSize">Items per page:</label>
-          <select id="leaderboardPageSize">
-            <option value="5" selected>5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="25">25</option>
-          </select>
-        </div>
+      <h3>Leaderboard</h3>
+      <div class="leaderboard-controls">
+        <label for="leader-page-size">Show:</label>
+        <select id="leader-page-size">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+        </select>
       </div>
-
       <table>
         <thead>
           <tr>
@@ -135,10 +160,34 @@
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
-      <div class="pagination" id="leaderboard-pagination"></div>
+      <div id="leader-pagination" class="pagination"></div>
     </div>
   </div>
 
   <script src="premiumexpense.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const logoutBtn = document.getElementById("logout-btn");
+      const leaderboardBtn = document.getElementById("show-leaderboard-btn");
+      const leaderboardSection = document.getElementById("leaderboard-section");
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "login.html";  
+        });
+      }
+
+      if (leaderboardBtn) {
+        leaderboardBtn.addEventListener("click", () => {
+          leaderboardSection.classList.toggle("hidden");
+          leaderboardBtn.textContent = leaderboardSection.classList.contains("hidden")
+            ? "Show Leaderboard"
+            : "Hide Leaderboard";
+        });
+      }
+    });
+  </script>
 </body>
 </html>
