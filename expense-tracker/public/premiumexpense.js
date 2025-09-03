@@ -7,7 +7,7 @@ let currentPage = 1;
 
 async function loadExpenses(page = 1) {
   try {
-    const pageSize = localStorage.getItem("pageSize") || 10;
+    const pageSize = localStorage.getItem("pageSize") || 30;
 
     const res = await fetch(
       `${API_BASE_URL}/api/premiumexpenses?page=${page}&limit=${pageSize}`,
