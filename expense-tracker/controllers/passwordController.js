@@ -15,18 +15,27 @@ const forgotPassword = (req, res) => {
     if (users.length === 0) return res.status(404).json({ error: "User not found" });
 
     const user = users[0];
-    const resetRequestId = uuidv4();
 
+    // Deactivate any previous active reset requests for this user
     db.query(
-      "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, ?, NOW())",
-      [resetRequestId, user.id, true],
-      (err2) => {
-        if (err2) return res.status(500).json({ error: "Failed to create reset request" });
+      "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE userId = ?",
+      [user.id],
+      (err) => {
+        if (err) console.error("Failed to deactivate old reset requests:", err);
 
-        const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
-        console.log("Reset URL:", resetUrl);
+        const resetRequestId = uuidv4();
+        db.query(
+          "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, TRUE, NOW())",
+          [resetRequestId, user.id],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: "Failed to create reset request" });
 
-        res.json({ message: "Password reset link created!", resetUrl });
+            const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
+            console.log("Reset URL:", resetUrl);
+
+            res.json({ message: "Password reset link created!", resetUrl });
+          }
+        );
       }
     );
   });
