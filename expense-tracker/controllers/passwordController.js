@@ -16,28 +16,27 @@ const forgotPassword = (req, res) => {
     const user = users[0];
     const resetRequestId = uuidv4();
 
-    // Start by deactivating old requests, then insert new one
+    // Deactivate old requests first
     db.query(
       "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE userId = ?",
       [user.id],
       (err) => {
         if (err) console.error("Failed to deactivate old requests:", err);
 
+        // Insert new reset request
         db.query(
           "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, TRUE, NOW())",
-          
-
           [resetRequestId, user.id],
-          (err2) => {
+          (err2, result) => { // ✅ add 'result' here
             if (err2) {
               console.error("Failed to insert new reset request:", err2);
               return res.status(500).json({ error: "Failed to create reset request" });
             }
 
+            console.log("Inserted reset request:", result); // ✅ now defined
+
             const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
             console.log("Reset URL:", resetUrl);
-        console.log("Inserted reset request:", result); // <-- result undefined
-
 
             res.json({ message: "Password reset link created!", resetUrl });
           }
@@ -46,7 +45,6 @@ const forgotPassword = (req, res) => {
     );
   });
 };
-
 
 // ===== Reset Password Form =====
 const resetPasswordForm = (req, res) => {
@@ -116,4 +114,3 @@ module.exports = {
   resetPasswordForm,
   resetPasswordSubmit,
 };
-
