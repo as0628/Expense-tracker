@@ -8,32 +8,21 @@ const db = require("../config/db");
 // ===== Forgot Password =====
 const forgotPassword = (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
+  if (!email) return res.status(400).json({ error: "Email is required" });
 
   db.query("SELECT * FROM signup WHERE email = ?", [email], (err, users) => {
-    if (err) {
-      console.error("DB error:", err);
-      return res.status(500).json({ error: "Database error" });
-    }
-    if (users.length === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (users.length === 0) return res.status(404).json({ error: "User not found" });
 
     const user = users[0];
     const resetRequestId = uuidv4();
 
     db.query(
-      "INSERT INTO forgotpasswordrequests (id, userId, isActive) VALUES (?, ?, ?)",
+      "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, ?, NOW())",
       [resetRequestId, user.id, true],
       (err2) => {
-        if (err2) {
-          console.error("Insert error:", err2);
-          return res.status(500).json({ error: "Failed to create reset request" });
-        }
+        if (err2) return res.status(500).json({ error: "Failed to create reset request" });
 
-        // Construct the reset URL using FRONTEND_URL from .env
         const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
         console.log("Reset URL:", resetUrl);
 
@@ -46,22 +35,14 @@ const forgotPassword = (req, res) => {
 // ===== Reset Password Form =====
 const resetPasswordForm = (req, res) => {
   const { id } = req.params;
-  console.log("Reset link requested:", id); // Debug log
 
   db.query(
     "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
     [id],
     (err, requests) => {
-      if (err) {
-        console.error("DB error:", err);
-        return res.status(500).send("Something went wrong.");
-      }
-      if (requests.length === 0) {
-        console.log("Invalid or expired reset link:", id); // Debug log
-        return res.status(400).send("Invalid or expired reset link.");
-      }
+      if (err) return res.status(500).send("Something went wrong.");
+      if (requests.length === 0) return res.status(400).send("Invalid or expired reset link.");
 
-      // Serve the reset password HTML page
       res.sendFile(path.join(__dirname, "../public/resetpassword.html"));
     }
   );
@@ -80,39 +61,25 @@ const resetPasswordSubmit = (req, res) => {
     "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
     [id],
     async (err, requests) => {
-      if (err) {
-        console.error("DB error:", err);
-        return res.status(500).json({ success: false, message: "Something went wrong." });
-      }
-      if (requests.length === 0) {
-        return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
-      }
+      if (err) return res.status(500).json({ success: false, message: "Something went wrong." });
+      if (requests.length === 0) return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
 
       try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Update the user's password
         db.query(
           "UPDATE signup SET password = ? WHERE id = ?",
           [hashedPassword, requests[0].userId],
           (err2) => {
-            if (err2) {
-              console.error("Update error:", err2);
-              return res.status(500).json({ success: false, message: "Failed to update password." });
-            }
+            if (err2) return res.status(500).json({ success: false, message: "Failed to update password." });
 
-            // Mark the reset request as inactive
             db.query(
               "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE id = ?",
               [id],
               (err3) => {
-                if (err3) {
-                  console.error("Deactivate error:", err3);
-                  return res.status(500).json({ success: false, message: "Something went wrong." });
-                }
+                if (err3) return res.status(500).json({ success: false, message: "Something went wrong." });
 
-                // Respond with success message and optional redirect
-                return res.json({
+                res.json({
                   success: true,
                   message: "Password reset successfully! You can now login with your new password.",
                   redirect: "login.html"
@@ -122,7 +89,6 @@ const resetPasswordSubmit = (req, res) => {
           }
         );
       } catch (hashErr) {
-        console.error("Hashing error:", hashErr);
         return res.status(500).json({ success: false, message: "Failed to process password." });
       }
     }
