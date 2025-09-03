@@ -16,24 +16,24 @@ const forgotPassword = (req, res) => {
     const user = users[0];
     const resetRequestId = uuidv4();
 
-    // Deactivate old requests first
+    // Deactivate any old requests
     db.query(
-      "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE userId = ?",
+      "UPDATE forgotpasswordrequests SET isActive = 0 WHERE userId = ?",
       [user.id],
       (err) => {
         if (err) console.error("Failed to deactivate old requests:", err);
 
         // Insert new reset request
         db.query(
-          "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, TRUE, NOW())",
+          "INSERT INTO forgotpasswordrequests (id, userId, isActive, createdAt) VALUES (?, ?, 1, NOW())",
           [resetRequestId, user.id],
-          (err2, result) => { // ✅ add 'result' here
+          (err2, result) => {
             if (err2) {
               console.error("Failed to insert new reset request:", err2);
               return res.status(500).json({ error: "Failed to create reset request" });
             }
 
-            console.log("Inserted reset request:", result); // ✅ now defined
+            console.log("Inserted reset request:", result);
 
             const resetUrl = `${process.env.FRONTEND_URL}/password/resetpassword/${resetRequestId}`;
             console.log("Reset URL:", resetUrl);
@@ -51,7 +51,7 @@ const resetPasswordForm = (req, res) => {
   const { id } = req.params;
 
   db.query(
-    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
+    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = 1",
     [id],
     (err, requests) => {
       if (err) return res.status(500).send("Something went wrong.");
@@ -72,7 +72,7 @@ const resetPasswordSubmit = (req, res) => {
   }
 
   db.query(
-    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = TRUE",
+    "SELECT * FROM forgotpasswordrequests WHERE id = ? AND isActive = 1",
     [id],
     async (err, requests) => {
       if (err) return res.status(500).json({ success: false, message: "Database error." });
@@ -87,8 +87,9 @@ const resetPasswordSubmit = (req, res) => {
           (err2) => {
             if (err2) return res.status(500).json({ success: false, message: "Failed to update password." });
 
+            // Deactivate this reset request
             db.query(
-              "UPDATE forgotpasswordrequests SET isActive = FALSE WHERE id = ?",
+              "UPDATE forgotpasswordrequests SET isActive = 0 WHERE id = ?",
               [id],
               (err3) => {
                 if (err3) return res.status(500).json({ success: false, message: "Something went wrong." });
