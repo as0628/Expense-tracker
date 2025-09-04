@@ -193,4 +193,34 @@ tr:nth-child(even) {
 .hidden {
   display: none;
 }
+/* Expense List Pagination */
+.expense-pagination-container {
+  display: flex;
+  justify-content: flex-end;   /* push pagination to right */
+  align-items: center;
+  margin-top: 12px;
+  gap: 12px;
+}
 
+.expense-pagination-container label {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.expense-pagination-container select {
+  padding: 6px 10px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.expense-pagination-container .pagination {
+  display: flex;
+  gap: 6px;
+}
+
+.expense-pagination-container .pagination button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}

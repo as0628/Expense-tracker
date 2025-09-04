@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const getExpenses = (req, res) => {
-  const userId = req.user.id;//reads the logged-in user’s id from req.user
+  const userId = req.user.id;
   db.query('SELECT * FROM expenses WHERE user_id = ?', [userId], (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     res.json(results);
@@ -10,8 +10,8 @@ const getExpenses = (req, res) => {
 
 
 const addExpense = (req, res) => {
-  const { amount, description, category, note } = req.body; //gets expense data from the request body.
-  const userId = req.user.id;//gets user ID from token.
+  const { amount, description, category, note } = req.body; 
+  const userId = req.user.id;
 
   if (!amount || !description || !category) {
     return res.status(400).json({ error: 'Amount, description and category are required' });
@@ -37,8 +37,8 @@ const addExpense = (req, res) => {
   );
 };
 const updateExpense = (req, res) => {
-  const { id } = req.params;//Extracts expense id from URL (/expenses/:id).
-  const { amount, description, category, note } = req.body;  //gets updated data from req.body.
+  const { id } = req.params;
+  const { amount, description, category, note } = req.body;  
   const userId = req.user.id;
 
   db.query(
